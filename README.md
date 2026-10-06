@@ -15,6 +15,10 @@ A configurable Codex skill for collecting original city statistics from official
 - 必跑PDF回归涵盖无边框文本、碎裂合并表头和正常多列表格；缺测试依赖报错，不以跳过PDF得到全绿。
 - 网络、解析、环境、匹配资格错误分类，网络有界重试，解析失败换后端。
 
+## 验证范围
+
+**北京验证 ≠ 全部版式可靠。** 当前真实端到端覆盖只有北京2025公报正文和GDP一张单页指标行图片；扫描PDF使用同图生成的测试副本。复杂跨页、多城市扫描矩阵和未覆盖布局仍待核，不能泛化。详见[验证覆盖矩阵](references/coverage.md)，运行报告也包含该范围。
+
 ## 能力与边界
 
 |入口|用途|边界|
@@ -75,7 +79,7 @@ python scripts/extract_tables.py --input examples/sample_table.html --format htm
 python scripts/bootstrap.py --venv .venv --profile test
 ```
 
-然后使用隔离环境Python执行`-m unittest discover -s tests -v`。当前38项测试在独立环境中全部实际执行，无跳过；不包含浏览器真实网站的全面验证。
+然后使用隔离环境Python执行`-m unittest discover -s tests -v`。当前42项测试在独立环境中全部实际执行，无跳过；不包含浏览器真实网站的全面验证。
 
 ## 来源与口径
 

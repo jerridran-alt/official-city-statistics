@@ -5,6 +5,7 @@ from urllib.parse import urlparse
 from document_source import read_article,infer_context
 from failure_types import SourceFailure,classify
 from stats_core import number,norm,save
+from validation_coverage import boundary,coverage
 
 UNITS=('万吨标准煤','亿千瓦时','万千瓦时','万亿元','亿元','万元','万人','千瓦时','吨标准煤','人','%')
 GDP_LABELS={'第二产业增加值':['第二产业'],'第三产业增加值':['第三产业'],'工业增加值':['工业']}
@@ -87,9 +88,12 @@ def extract_ocr(file,layout_file,config,root,capture_manifest,registry,parent_ca
     capture=json.loads(capture_manifest.read_text(encoding='utf-8-sig'));layout=json.loads(layout_file.read_text(encoding='utf8'))
     digest=hashlib.sha256(file.read_bytes()).hexdigest()
     if layout['source_sha256']!=digest:raise ValueError('OCR artifact and original image/PDF mismatch')
+    blocked=boundary(layout,config)
+    if blocked:return {'records':[],'pending':[blocked],'context':None,'data_complete':False,'verification_status':'uncovered_layout_pending_review','validation_coverage':coverage()}
     context=context_for(capture,config,registry,root,parent_capture);records=[];pending=[]
     layout_hash=hashlib.sha256(layout_file.read_bytes()).hexdigest()
     for page in layout['pages']:
+        before=len(records)
         rows=bands(page);year_rows=[]
         for row in rows:
             groups=literal_groups(page,row['indices'])
@@ -137,7 +141,8 @@ def extract_ocr(file,layout_file,config,root,capture_manifest,registry,parent_ca
                 for indicator in matched:
                     if not compatible_unit(indicator,unit):continue
                     records.append(make_record(file,layout_file,root,capture_manifest,parent_capture,digest,layout_hash,context,page,indicator,year,unit,first,label_indices+headers,[]))
-    return {'records':records,'pending':pending,'context':context,'data_complete':False,'verification_status':'OCR candidates require source-image visual review'}
+        if len(records)==before:pending.append({'page':page['page'],'code':'UNCOVERED_OR_UNRESOLVED_LAYOUT','reason':'本页未得到可确定指标，版式/表头/单位仍待核；不依据北京样本宣称已解析。'})
+    return {'records':records,'pending':pending,'context':context,'data_complete':False,'verification_status':'OCR candidates require source-image visual review','validation_coverage':coverage()}
 
 
 def make_record(file,layout_file,root,capture,parent,digest,layout_hash,context,page,indicator,year,unit,value_words,header_words,year_words):

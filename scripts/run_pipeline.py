@@ -9,6 +9,7 @@ from ocr_extract import extract_ocr
 from audit_candidates import audit
 from stats_core import save
 from failure_types import classify,SourceFailure
+from validation_coverage import coverage
 
 
 def run(url,config,registry_file,output,media_limit=2,ocr_engine='auto',parent_url=None):
@@ -27,7 +28,7 @@ def run(url,config,registry_file,output,media_limit=2,ocr_engine='auto',parent_u
         records=extracted['records']
         if not records:raise SourceFailure('OCR_LAYOUT_UNPARSED','PDF/图片已OCR但未得到可确定原数；需视觉或另一版式后端，不得喂空数据')
         save(output/'candidates.json',records);report=audit(records,config,output,registry);save(output/'audit.json',report)
-        result={'status':'candidates_require_review','records':len(records),'machine_checks_passed':report['machine_checks_passed'],'unreviewed':len(records),'image_sources_queued':layout['pages_queued'],'failed_sources':[],'seconds':round(time.monotonic()-started,3),'data_complete':False,'backend':'PDF/image OCR','pending':extracted['pending']};save(output/'pipeline_report.json',result);return result
+        result={'status':'candidates_require_review','records':len(records),'machine_checks_passed':report['machine_checks_passed'],'unreviewed':len(records),'image_sources_queued':layout['pages_queued'],'failed_sources':[],'seconds':round(time.monotonic()-started,3),'data_complete':False,'backend':'PDF/image OCR','pending':extracted['pending'],'validation_coverage':coverage()};save(output/'pipeline_report.json',result);return result
     article=extract_article(source,config,output,manifest);records=article['records'];media=[];failures=[]
     # The limit bounds work, not a claim that unvisited image sources are empty.
     relevant=[i for i in article['images'] if '表' in i['preceding_text'][-180:] and any(k in i['preceding_text'][-400:] for k in ('生产总值','人口','贷款','能源','用电'))]
@@ -42,6 +43,7 @@ def run(url,config,registry_file,output,media_limit=2,ocr_engine='auto',parent_u
     if not records:raise SourceFailure('NO_CANDIDATES','所有路径均未取得指标记录，来源未解析，非数据齐全')
     save(output/'candidates.json',records);report=audit(records,config,output,registry);save(output/'audit.json',report)
     result={'status':'candidates_require_review','records':len(records),'machine_checks_passed':report['machine_checks_passed'],'unreviewed':len(records),'image_results':media,'failed_sources':failures,'image_sources_queued':max(0,len(relevant)-media_limit),'unsupported_rules':article['unsupported_rules'],'missing_indicators':[n for n in config['keep_indicators'] if n not in {r['indicator'] for r in records}],'excluded_mentions':article['excluded_mentions'],'seconds':round(time.monotonic()-started,3),'data_complete':False,'note':'候选生成不是统计真实性认证。先完成原文/原图和口径审核，再运行 select_panel.py。'}
+    result['validation_coverage']=coverage()
     save(output/'pipeline_report.json',result);return result
 
 
