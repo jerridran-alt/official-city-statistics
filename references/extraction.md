@@ -28,6 +28,8 @@ python scripts/extract_tables.py --input examples/sample_table.html --format htm
 
 ## OCR
 
+若年鉴版年/名称只在目录，可用映射顶层 `context_chain` 指向证据根目录下的目录→章节网络清单。程序核验原件哈希、同官网及逐级导航，最后必须链接到候选原表；标题不能凭配置赋值。参见[江苏真实多城市例](jiangsu-validation.md)。表头仍直接从原表读取，脚注范围仍需审核。
+
 ```text
 python scripts/ocr_image.py --input <扫描图或PDF> --output work/ocr_words.json --cache-dir work/ocr_cache --engine rapidocr
 ```

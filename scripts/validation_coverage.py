@@ -6,7 +6,8 @@ def coverage():
     return {
         'real_reference_cases':[
             {'case':'北京市2025公报正文','verified_outputs':12,'scope':'该文已支持规则及原句；不代表全部公报模板'},
-            {'case':'北京市2025公报GDP单图','verified_outputs':4,'scope':'该单页指标行布局及四个金额；不代表全部图片/布局'}
+            {'case':'北京市2025公报GDP单图','verified_outputs':4,'scope':'该单页指标行布局及四个金额；不代表全部图片/布局'},
+            {'case':'江苏统计年鉴2025表9-10分地区全社会用电量','verified_outputs':91,'scope':'真实HTML单表13城×2018—2024；目录证据链、全城采集及名单扩大缓存复用，不代表扫描矩阵或全部省份'}
         ],
         'derived_fixture_cases':[{'case':'同图生成的零文字层PDF','scope':'渲染/OCR路由测试，不是官方原PDF，不认证其他扫描件'}],
         'synthetic_regressions':['HTML/CSV/XLSX及多城市合成表','无边框/碎裂合并表头/正常多列PDF'],

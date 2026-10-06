@@ -21,6 +21,9 @@ def extract(parsed, mapping, config, source_file, evidence_root, capture_manifes
     capture = None if capture_manifest is None else Path(capture_manifest).resolve().relative_to(root).as_posix()
     capture_url = None if capture_manifest is None else json.loads(Path(capture_manifest).read_text(encoding='utf-8-sig'))['final_url']
     records, skipped, errors = [], [], []
+    from table_context import publication_context
+    context_chain=mapping.get('context_chain',[])
+    context_text=parsed['text']+' '+publication_context(context_chain,root,capture_url)
     for spec in mapping['tables']:
         ti = spec['table_index']
         table = parsed['tables'][ti]
@@ -61,11 +64,12 @@ def extract(parsed, mapping, config, source_file, evidence_root, capture_manifes
                     if any(norm(v) not in norm(header_text) for v in required.values()):
                         raise ValueError('Configured indicator/year/unit is not supported by the referenced header cells')
                     for quote in (spec['scope_quote'], mapping['class_quote'], mapping['edition_quote']):
-                        if not quote or norm(quote) not in norm(parsed['text']):
+                        if not quote or norm(quote) not in norm(context_text):
                             raise ValueError('Missing original context quote: ' + str(quote))
                     identity = json.dumps([parsed['source_sha256'], ti, pos, research_id or source_row_id, col['indicator'], col['year'], spec['scope'], mapping['source_class'], mapping['edition'], capture_url], ensure_ascii=False)
                     record = {'id': hashlib.sha256(identity.encode()).hexdigest()[:24], 'research_id': research_id, 'source_row_id': source_row_id, 'identity_status': 'matched' if unit else 'unmapped', 'city': city_name, 'year': col['year'], 'indicator': col['indicator'], 'unit': col['unit'], 'value': value, 'source_class': mapping['source_class'], 'edition': mapping['edition'], 'geographic_scope': spec['scope'], 'is_derived': False, 'evidence': {'file': file, 'sha256': parsed['source_sha256'], 'format': parsed['format'], 'encoding': parsed['encoding'], 'table_index': ti, 'cell': pos, 'city_cell': city_pos, 'city_text': city_text, 'value_text': raw, 'header_cells': headers, 'indicator_quote': required['indicator'], 'scope_quote': spec['scope_quote'], 'class_quote': mapping['class_quote'], 'edition_quote': mapping['edition_quote'], 'capture_manifest': capture, 'capture_url': capture_url}}
                     records.append(record)
+                    if context_chain:record['evidence']['context_chain']=context_chain
                 except (KeyError, IndexError, ValueError) as exc:
                     errors.append({'table': ti, 'cell': pos, 'city': city_name, 'error': str(exc)})
     return {'records': records, 'skipped': skipped, 'errors': errors, 'source_cities_extracted': len({r['source_row_id'] for r in records}), 'research_units_matched': len({r['research_id'] for r in records if r['research_id'] is not None})}

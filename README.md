@@ -17,7 +17,7 @@ A configurable Codex skill for collecting original city statistics from official
 
 ## 验证范围
 
-**北京验证** 当前真实端到端覆盖未北京2025公报正文和GDP一张单页指标行图片；扫描PDF使用同图生成的测试副本。复杂跨页、多城市扫描矩阵和未覆盖布局仍待核，不能泛化。详见[验证覆盖矩阵](references/coverage.md)，运行报告也包含该范围。
+**真实验证范围** 当前真实端到端覆盖包括北京2025公报正文、GDP一张单页指标行图片，以及江苏2025年鉴表9-10的13城市用电量HTML表；扫描PDF使用同图生成的测试副本。复杂跨页、多城市扫描矩阵和未覆盖布局仍待核，不能泛化。详见[验证覆盖矩阵](references/coverage.md)，运行报告也包含该范围。
 
 ## 能力与边界
 
@@ -67,6 +67,14 @@ python scripts/export_panel.py --input work/beijing/selected.json --output work/
 
 ## 合成表体验与测试
 
+真实省级多城市例：[江苏统计年鉴2025表9-10](references/jiangsu-validation.md)，一次提取13城×2018—2024共91个全社会用电量原数。首轮只配置2城仍保留其余77值，扩大名单复用缓存；原表排除网损等脚注完整保留，不用省合计替代各市值。
+
+```text
+python examples/validate_jiangsu.py --output work/jiangsu_reference
+```
+
+本例只依赖标准库；联网失败或原件改版明确失败，扫描矩阵/复杂跨页仍待核。结果为可核验JSON，demo身份不是正式研究行政代码。
+
 ```text
 python scripts/extract_tables.py --input examples/sample_table.html --format html --config examples/project.json --mapping examples/table_mapping.json --output work/candidates.json --cache-dir work/table_cache --evidence-root .
 ```
@@ -79,7 +87,7 @@ python scripts/extract_tables.py --input examples/sample_table.html --format htm
 python scripts/bootstrap.py --venv .venv --profile test
 ```
 
-然后使用隔离环境Python执行`-m unittest discover -s tests -v`。当前42项测试在独立环境中全部实际执行，无跳过；不包含浏览器真实网站的全面验证。
+然后使用隔离环境Python执行`-m unittest discover -s tests -v`。当前46项测试在独立环境中全部实际执行，无跳过；另有江苏真实91格参考例，不包含浏览器真实网站的全面验证。
 
 ## 来源与口径
 

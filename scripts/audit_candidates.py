@@ -72,8 +72,10 @@ def verify(record, config, root, registry, parsed_cache):
         for token in (e['indicator_quote'], str(r['year']), r['unit']):
             if not token or norm(token) not in norm(headers):
                 raise ValueError('Indicator/year/unit unsupported by original referenced headers')
+        from table_context import publication_context
+        context_text=parsed['text']+' '+publication_context(e.get('context_chain',[]),root,e.get('capture_url'),registry)
         for field in ('scope_quote', 'class_quote', 'edition_quote'):
-            if not e.get(field) or norm(e[field]) not in norm(parsed['text']):
+            if not e.get(field) or norm(e[field]) not in norm(context_text):
                 raise ValueError('Context quotation absent from original: ' + field)
         if not r.get('geographic_scope') or norm(r['geographic_scope']) not in norm(e['scope_quote']):
             raise ValueError('Scope unsupported by context quotation')
