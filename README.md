@@ -17,7 +17,7 @@ A configurable Codex skill for collecting original city statistics from official
 
 ## 验证范围
 
-**北京验证 ≠ 全部版式可靠。** 当前真实端到端覆盖只有北京2025公报正文和GDP一张单页指标行图片；扫描PDF使用同图生成的测试副本。复杂跨页、多城市扫描矩阵和未覆盖布局仍待核，不能泛化。详见[验证覆盖矩阵](references/coverage.md)，运行报告也包含该范围。
+**北京验证** 当前真实端到端覆盖未北京2025公报正文和GDP一张单页指标行图片；扫描PDF使用同图生成的测试副本。复杂跨页、多城市扫描矩阵和未覆盖布局仍待核，不能泛化。详见[验证覆盖矩阵](references/coverage.md)，运行报告也包含该范围。
 
 ## 能力与边界
 
