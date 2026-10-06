@@ -1,0 +1,22 @@
+[
+  {
+    "research_id": "131000",
+    "city": "廊坊市",
+    "year": 2025,
+    "indicator": "固定资产投资增长率",
+    "unit": "%",
+    "value": -7.2,
+    "source_class": "communique",
+    "edition": 2026,
+    "publisher": "廊坊市人民政府",
+    "url": "https://www.lf.gov.cn/UploadFiles/jrlf/2026/6/202606041647452973.pdf",
+    "publication_url": "https://www.lf.gov.cn/Item/156066.aspx",
+    "locator": "PDF第1页，四、投资，正文首句",
+    "original_text": "全年固定资产投资同比下降7.2%",
+    "geographic_scope": "全市",
+    "official_verified": true,
+    "value_verified": true,
+    "scope_verified": true,
+    "is_derived": false
+  }
+]
