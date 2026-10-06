@@ -23,3 +23,13 @@ python scripts/select_panel.py --records work/candidates.json --config examples/
 ```
 
 筛选器按研究名单从已采集全部城市中筛选，名单外记录只排除出当前面板，仍保存在来源缓存与 excluded_from_panel 报告。筛选器再次核查原文，一致网络采集与审核缺一不可；原文件改变后旧审核失效。未审核、证据不符、同级同版冲突均保留为待核/冲突，退出码 1，不生成健康的“全齐”结论。输出不换算单位，不计算效率，不将缺失补零。原数数据与审核表分离，最终项目面板格式由用户决定。
+
+## V3 正文与OCR证据
+
+正文候选使用 `article_span`：绑定原文件、正文字符范围、原句、标题、出版日期和已登记规则；审核脚本独立重读并回放，改值/改单位/改身份不能通过。
+
+OCR候选使用 `ocr_layout`：原文件哈希、OCR工件哈希、页码、数值/表头/年份词索引，以及父发布页或书目上下文。审核程序检查采集链和回放位置解释，但 `glyph_accuracy_certified=false`，仍须查看原图。OCR候选不得凭三个旧布尔值或识别置信度自动批准。
+
+上游报告为unparsed或empty_or_error时，审核CLI阻断空数据与旧输出；空审核输入、空选择、空面板不返回成功。失败区分network、parse、environment及eligibility，有界网络重试，解析/配置问题先换后端或核对源。
+
+选择后可运行 `export_panel.py --input selected.json --output panel.csv`，生成城市—年份宽表。单位写在列名，金额和比例不换算；目标缺项仍留空，导出成功不等于全样本齐全。

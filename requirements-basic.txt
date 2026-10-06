@@ -1,0 +1,4 @@
+Pillow>=10
+pypdfium2>=4.30
+pypdf>=5
+pdfplumber>=0.11

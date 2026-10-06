@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from urllib.parse import urlparse
 from official_fetch import fetch
 from stats_core import save
+from failure_types import classify
 
 
 def collect(seed, registry, output, depth=1, limit=10, engine='http'):
@@ -29,7 +30,7 @@ def collect(seed, registry, output, depth=1, limit=10, engine='http'):
                     if (link['is_statistics_hint'] or link['is_attachment']) and urlparse(link['url']).hostname in hosts:
                         queue.append((link['url'], level + 1))
         except Exception as exc:
-            results.append({'url': url, 'depth': level, 'status': 'failed', 'error': str(exc)})
+            results.append({'url':url,'depth':level,'status':'failed','failure':classify(exc)})
     return {'sources': results, 'queued_not_visited': len(queue), 'limit_reached': bool(queue), 'note': 'Discovery is bounded and does not establish completeness of a website or research sample.'}
 
 

@@ -1,0 +1,6 @@
+{
+  "hosts": [
+    {"host": "tjj.beijing.gov.cn", "publisher": "北京市统计局、国家统计局北京调查总队", "publisher_id": "beijing-statistics", "level": "province", "evidence_url": "https://tjj.beijing.gov.cn/", "verified": true},
+    {"host": "nj.tjj.beijing.gov.cn", "publisher": "北京市统计局、国家统计局北京调查总队", "publisher_id": "beijing-statistics", "level": "province", "evidence_url": "https://tjj.beijing.gov.cn/", "verified": true}
+  ]
+}

@@ -28,8 +28,14 @@ def select(records, config, report, reviews):
         if r.get('research_id') not in research_ids:
             excluded.append({'id': r['id'], 'city': r['city'], 'reason': 'preserved in source cache; not mapped into this research sample'})
             continue
+        scope_rules=config.get('allowed_geographic_scopes',{})
+        allowed=scope_rules.get(r['indicator'],scope_rules.get('default'))
+        if allowed is not None and r['geographic_scope'] not in allowed:
+            excluded.append({'id':r['id'],'city':r['city'],'reason':'ineligible geographic/statistical scope; source priority does not override compatibility'});continue
         check = checks.get(r['id'])
         review = decisions.get(r['id'], {})
+        if review.get('decision')=='reject' and review.get('source_sha256')==r['evidence']['sha256'] and review.get('reviewer') and review.get('reason'):
+            excluded.append({'id':r['id'],'city':r['city'],'reason':'explicit documented rejection: '+review['reason']});continue
         if not check or not check['machine_checks_passed'] or not check['origin']['capture_matched'] or review.get('decision') != 'approve' or review.get('source_sha256') != r['evidence']['sha256'] or not review.get('reviewer') or not review.get('reason'):
             pending.append({'id': r['id'], 'reason': 'missing consistent original evidence, network capture, or separate documented semantic review'})
             continue
@@ -62,7 +68,7 @@ def main():
     report = audit(records, config, a.evidence_root, json.loads(Path(a.registry).read_text(encoding='utf-8-sig')))
     result = select(records, config, report, json.loads(Path(a.reviews).read_text(encoding='utf-8-sig')))
     save(a.output, result)
-    if a.csv:
+    if a.csv and result['selected']:
         fields = ['research_id', 'city', 'year', 'indicator', 'geographic_scope', 'unit', 'value', 'source_class', 'edition', 'id']
         out = Path(a.csv)
         out.parent.mkdir(parents=True, exist_ok=True)
@@ -71,7 +77,7 @@ def main():
             writer.writeheader()
             writer.writerows(result['selected'])
     print(json.dumps({k: len(v) for k, v in result.items()}))
-    return 1 if result['pending'] or result['conflicts'] else 0
+    return 1 if not result['selected'] or result['pending'] or result['conflicts'] else 0
 
 
 if __name__ == '__main__':

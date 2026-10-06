@@ -1,0 +1,12 @@
+{
+  "years": [2025, 2025],
+  "units": [{"id": "110000", "name": "北京市", "aliases": ["北京"]}],
+  "keep_indicators": ["地区生产总值", "地区生产总值增长率", "第二产业增加值", "第三产业增加值", "工业增加值", "年末常住人口", "城镇常住人口", "常住人口城镇化率", "地方一般公共预算支出", "固定资产投资增长率", "金融机构本外币贷款余额", "金融机构人民币贷款余额", "全社会能源消费总量", "全社会用电量"],
+  "allowed_geographic_scopes": {"default": ["全市"]},
+  "source_priorities": [
+    {"name": "国家统计局", "match": {"publisher_id": "nbs"}},
+    {"name": "各省统计年鉴", "match": {"authority_level": "province", "source_class": "yearbook"}},
+    {"name": "发展公报", "match": {"source_class": "communique"}},
+    {"name": "其余政府官方文件", "match": {}}
+  ]
+}

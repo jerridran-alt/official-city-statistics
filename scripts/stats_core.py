@@ -10,8 +10,9 @@ import xml.etree.ElementTree as ET
 from decimal import Decimal
 from html.parser import HTMLParser
 from pathlib import Path
+from failure_types import SourceFailure
 
-PARSER_VERSION = '2.1'
+PARSER_VERSION = '3.0'
 
 
 def number(text):
@@ -202,8 +203,31 @@ def read_source(path, fmt, encoding='utf-8-sig'):
     else:
         raise ValueError('Supported formats: html, csv, xlsx, pdf')
     if not tables:
-        raise ValueError('No structured tables detected; use a layout/OCR backend and retain review status')
-    return {'parser_version': PARSER_VERSION, 'source_sha256': digest, 'format': fmt, 'encoding': encoding, 'text': text, 'tables': tables}
+        raise SourceFailure('NO_STRUCTURED_TABLES','识别到 0 张表，非数据齐全。未识别到结构化表格，请改走 OCR/视觉后端，或换 HTML/XLSX 源。',detected_tables=0)
+    return {'parser_version': PARSER_VERSION, 'source_sha256': digest, 'format': fmt, 'encoding': encoding, 'text': text, 'tables': tables,'detected_tables':len(tables)}
+
+
+def table_health(table,spec):
+    cells=table.get('cells',[]);issues=[]
+    start=spec.get('data_start_row',0)
+    if not cells or start>=len(cells):
+        return [{'code':'NO_DATA_ROWS','reason':'识别到 0 个数据行，来源未解析，非数据齐全'}]
+    widths={len(row) for row in cells}
+    if len(widths)>1:issues.append({'code':'INCONSISTENT_COLUMNS','reason':'结构可疑：行列数不一致，需人工/视觉核对'})
+    for row_index,row in enumerate(cells[start:],start):
+        for col_index,value in enumerate(row):
+            text=str(value or '')
+            tokens=re.findall(r'(?<![A-Za-z0-9])[+-]?\d+(?:\.\d+)?',text)
+            if len(tokens)>1 and number(text) is None:
+                issues.append({'code':'MULTIPLE_VALUES_IN_CELL','cell':[row_index,col_index],'raw':text,'reason':'结构可疑：多个数值挤入单格，需人工/视觉核对'})
+    for col in spec.get('columns',[]):
+        try:head=' '.join(cell_at(table,p) for p in col['header_cells'])
+        except (KeyError,IndexError,ValueError):
+            issues.append({'code':'HEADER_REFERENCE_INVALID','reason':'表头异常：映射引用超出原表结构'});continue
+        head=head.replace('（','(').replace('）',')')
+        if head.count('(')!=head.count(')'):
+            issues.append({'code':'BROKEN_HEADER','header':head,'reason':'表头异常：括号或单位文本被拆断，需人工/视觉核对'})
+    return issues
 
 
 def norm(value):

@@ -2,50 +2,85 @@
 
 A configurable Codex skill for collecting original city statistics from official Chinese publications.
 
-从官方年鉴、发展公报和政府文件采集来源、读取表格、核对证据并筛选版本。城市、年份、指标、优先级及交付格式由配置决定，不依赖 GFPS 或私有流水线。
+**MIT 开源：任何人都可以免费使用、修改、分发和商用，无需向作者申请或另外授权。** 保留版权声明和[许可证](LICENSE)即可。此许可适用于本仓库代码与文档；外部依赖、模型和官方原文件遵循各自的许可或发布规则。
 
-**按表采集，按城市查缺。** 一张省级/全国表格读取一次，提取图表全部城市所需的数据，包含研究名单外城市，缓存原文件和结构化表格，后续城市复用缓存。
+从官方年鉴、发展公报及政府文件采集原始统计数值，保存来源与位置，核对城市/年份/单位/范围，再筛选和导出城市年份数据。项目自行配置样本、变量、年份与优先级，不绑定私有流水线。
 
-## 能力
+**按表采集，按城市查缺。** 已解析图表中的全部城市先进入来源缓存，研究名单只在入库时筛选；名单外城市保留原名与证据，未知代码不猜。复杂扫描矩阵未解析时明确排入待核，不能声称已读齐全。
 
-| 脚本 | 功能 | 依赖/边界 |
+## 已修复的失败防御
+
+- 0表格、0记录、0数据行明确非零退出，提示“未解析，非数据齐全”。不会把空结果或旧输出交给下游当成功。
+- 行列错乱、多值挤一格、碎裂括号/单位表头先隔离为结构可疑。
+- 必跑PDF回归涵盖无边框文本、碎裂合并表头和正常多列表格；缺测试依赖报错，不以跳过PDF得到全绿。
+- 网络、解析、环境、匹配资格错误分类，网络有界重试，解析失败换后端。
+
+## 能力与边界
+
+|入口|用途|边界|
 |---|---|---|
-| `official_fetch.py` | 单页/附件缓存、URL及SHA256记录、可选浏览器渲染 | HTTP为标准库；浏览器需Playwright及Chromium |
-| `collect_sources.py` | 按深度和页面限额遍历统计目录 | 有限遍历，不保证整站完整 |
-| `extract_tables.py` | HTML合并表头、CSV、XLSX、文本PDF表格；多城市原数抽取 | HTML/CSV/XLSX为标准库；PDF需pdfplumber；字段映射需要核对 |
-| `ocr_image.py` | 扫描图OCR文字、坐标、置信度及图像哈希 | 需Tesseract及语言包；不能自动认证数字 |
-| `audit_candidates.py` | 重读原文件，核对数值格、城市行、表头、上下文和采集清单 | 机械一致性检查，统计语义仍需审核 |
-| `select_panel.py` | 单独审核后按配置优先级/版年筛选，输出JSON/CSV | 保留冲突及待核项，不估算、不换算单位 |
+|`doctor.py` / `bootstrap.py`|诊断并建立独立环境|不依赖Codex预装库；系统/语言仍需检查|
+|`official_fetch.py` / `collect_sources.py`|官方页/附件、哈希、缓存、有限目录遍历|不保证整站可访问或完整|
+|`extract_tables.py`|HTML/CSV/XLSX/文本PDF表格|字段映射＋结构自检；无边框/复杂PDF不保证取数|
+|`document_extract.py`|公报正文的原句、字位和已支持指标规则|自动识别标题城市/数据年；排除跨区域、人均/总量混淆等；未覆盖规则明确报告|
+|`ocr_image.py` / `ocr_layout.py`|图片/扫描PDF渲染＋中文OCR、词坐标、缓存、低分报告|推荐RapidOCR＋CPU ONNX；识别分数不是字形真值|
+|`ocr_extract.py`|已覆盖的单城年份行/指标行图自动找字段、年、单位和数值列|仍需视觉复核；复杂跨页、多城市扫描矩阵及混合口径待适配，不猜值|
+|`run_pipeline.py`|连接官方获取、正文/图片候选和证据核验|有界媒体/页数，保留未处理队列；候选不自动批准|
+|`audit_candidates.py`|重读原文或回放OCR证据、核对采集链|三个自填核验布尔值不赋予信任；统计语义仍需真实审核|
+|`select_panel.py` / `export_panel.py`|审核后选版本，输出原数JSON/城市年份CSV|先匹配再排来源；不换单位、不估算、不填零|
 
-建议 Python 3.10+。不直接读取旧 `.xls`，不计算 XLSX 公式，不保证扫描件、图表及复杂无边框 PDF 可直接解析。可选浏览器/OCR后端未完成真实网站及真实扫描件端到端准确性验证。
+**无边框文本PDF和复杂合并表头PDF，pdfplumber路径不保证取数。** 0表或结构可疑必须停止该路径，标待人工/OCR，改用渲染OCR、官方HTML/XLSX或人工；不得向下游喂空数据。扫描件不是文本表后端的支持承诺。
 
-## 离线快速体验
+## 独立环境与真实北京例
 
-`examples/sample_table.html` 是明确标注的教学合成表，不含真实研究数值；包含三座城市和一个省合计，研究配置仅包含其中两座城市。
+建议Python 3.10+。先诊断，再安装需要的profile，安装不修改系统Python。
 
 ```bash
-python scripts/extract_tables.py --input examples/sample_table.html --format html --config examples/project.json --mapping examples/table_mapping.json --output work/candidates.json --cache-dir work/table_cache --evidence-root .
-python scripts/audit_candidates.py --records work/candidates.json --config examples/project.json --evidence-root . --registry examples/official_hosts.json --output work/audit.json
-python -m unittest discover -s tests -v
+python scripts/doctor.py
+python scripts/bootstrap.py --venv .venv --profile ocr
 ```
 
-第一条读取图表全部三座城市，生成六条原数候选；其中四条匹配当前研究名单，两条名单外原数仍保留，再次运行复用表格缓存。第二条核对原格及上下文；离线示例没有真实网络采集清单，**不能作为官方数据入库**。
+之后使用隔离环境的Python。Windows PowerShell：
 
-## 实际项目
+```powershell
+& .\.venv\Scripts\python.exe scripts/run_pipeline.py --url https://tjj.beijing.gov.cn/zxfbu/202603/t20260324_4564401.html --config examples/beijing_project.json --registry examples/beijing_authorities.json --output work/beijing --media-limit 1 --ocr-engine rapidocr
+```
 
-1. 创建项目配置：稳定研究ID、城市名称/明确别名、观察年份、原始指标。
-2. 核实官网及发布者，维护来源注册表，按有限深度采集目录与附件。
-3. 检查原表，配置表号、城市列、起始行、指标列和表头位置，一次抽取图表全部城市，再匹配研究名单。
-4. 保存原文件，重读核验证据，单独记录来源、脚注及口径审核，再筛选导出。
+Linux/macOS同一命令将开头替换为 `.venv/bin/python`。本次实际验证运行于Windows新环境；不据此保证所有操作系统已测试。
 
-当前需求的模板采用 **国家统计局 > 各省统计年鉴 > 发展公报 > 其他政府官方文件**，同级取最新版。其他研究者可修改，不是所有项目的强制来源顺序。
+结果包含`candidates.json`、`audit.json`、`pipeline_report.json`、原文件、OCR位置和审核图；请查看原文/原图，建立真实`reviews.json`后：
 
-程序不会因几个核验布尔值为 true 就相信候选；它重读原文件并核对实际数据位置及采集清单。官网身份、版本类别、脚注语义仍有人工信任边界，见[证据规范](references/records.md)。配置见[项目配置](references/config.md)，PDF/OCR和采集命令见[提取后端](references/extraction.md)。
+```text
+python scripts/select_panel.py --records work/beijing/candidates.json --config examples/beijing_project.json --evidence-root work/beijing --registry examples/beijing_authorities.json --reviews work/beijing/reviews.json --output work/beijing/selected.json
+python scripts/export_panel.py --input work/beijing/selected.json --output work/beijing/panel.csv
+```
 
-缓存、审核记录与最终面板分别保存。Excel等交付形式由用户项目选择，核心脚本不绑定私有导出器。
+以上`python`指新环境的Python，不是尚未装依赖的全局解释器。直接官方PDF/图片可传`--parent-url`绑定原发布页。
 
-## 在 Codex 中使用
+[北京真实验证](references/beijing-validation.md)：官方正文获得12条候选，GDP原图OCR获得4条，源证据核验16条；本轮由Codex实际做原文/视觉核对并记录审核，去重得到12项原数，导出北京市2025年一行CSV。京津冀区域GDP被排除，2025能源总量/全社会用电量本轮仍未取得。**这是有限小样本验证，不是全指标、全城市或OCR准确率保证。**
 
-将仓库放入技能目录，文件夹名称保持 `official-city-statistics`，技能可用后以 `$official-city-statistics` 调用，并说明项目目录与配置。`SKILL.md` 是入口。
+同一官方图片生成的零文字层测试PDF也走通渲染/OCR，副本不冒充官方原PDF或新来源。Windows原生OCR出现误读，仍作为可用备用通路，不能据“可用”自动批准。
 
-这是开发中的工具，没有大规模使用或OCR准确性保证。欢迎通过 [Issues](https://github.com/jerridran-alt/official-city-statistics/issues) 提供可公开的来源结构、问题和复现步骤；不要提交私人数据或凭据。
+## 合成表体验与测试
+
+```text
+python scripts/extract_tables.py --input examples/sample_table.html --format html --config examples/project.json --mapping examples/table_mapping.json --output work/candidates.json --cache-dir work/table_cache --evidence-root .
+```
+
+合成图表含3城市，研究名单只有2城市；仍读取全部3城共6值，名单外城市也保存。不是研究数据。
+
+运行完整测试：
+
+```text
+python scripts/bootstrap.py --venv .venv --profile test
+```
+
+然后使用隔离环境Python执行`-m unittest discover -s tests -v`。当前38项测试在独立环境中全部实际执行，无跳过；不包含浏览器真实网站的全面验证。
+
+## 来源与口径
+
+当前模板：**国家统计局 > 各省统计年鉴 > 发展公报 > 其他政府官方文件**，同级取最新刊载版本。只在城市、数据年、指标和统计范围匹配的原数之间比较；高等级来源没有城市分项时继续查地方来源，不用全国数替代。出版年与观察年分别记录。其他用户可改优先级。
+
+环境见[安装与诊断](references/environment.md)，配置见[项目配置](references/config.md)，操作见[提取后端](references/extraction.md)，核验边界见[证据规范](references/records.md)。来源身份登记和语义审核仍有人工信任边界，不是防伪认证。
+
+将仓库放入技能目录，目录名保持`official-city-statistics`，通过`$official-city-statistics`调用，说明项目与配置。欢迎通过[Issues](https://github.com/jerridran-alt/official-city-statistics/issues)反馈可公开来源结构与复现步骤；请勿上传私人数据或凭据。

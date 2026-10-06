@@ -184,11 +184,8 @@ class BackendTests(unittest.TestCase):
             self.assertIn([2, 1], table['display_requires_review'])
 
     def test_pdf_grid_optional_backend(self):
-        try:
-            from reportlab.pdfgen import canvas
-            import pdfplumber
-        except ImportError:
-            self.skipTest('Optional PDF dependencies unavailable')
+        from reportlab.pdfgen import canvas
+        import pdfplumber
         with tempfile.TemporaryDirectory() as temp:
             file = Path(temp) / 'fixture.pdf'
             c = canvas.Canvas(str(file))

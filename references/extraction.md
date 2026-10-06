@@ -20,7 +20,7 @@ python scripts/extract_tables.py --input examples/sample_table.html --format htm
 - HTML：展开 rowspan/colspan 并保存原起始格；嵌套表格明确报错，需要适配。
 - CSV：保留原单元格字符串，按明确表头映射读取。
 - XLSX：标准库读取共享字符串/内联字符串及原存储数值；不计算公式。公式单元格，以及百分比、日期、缩放显示格式进入待核，不把存储值误当成显示值录入。旧 `.xls` 不支持直接解析，需要额外读取后端。
-- PDF：需要 pdfplumber，读取文本型 PDF 的表格及页码；没有表格时明确报告，而不是猜测。扫描 PDF、复杂无边框表格、图表不是此后端的保证覆盖范围。
+- PDF文本表后端：需要 pdfplumber。**无边框文本PDF和复杂合并表头PDF不保证取数**；0表/0记录明确非零退出并标“未解析，非数据齐全”。列错乱、多值挤一格、碎裂括号/单位表头先隔离为结构可疑，不把解析失败当缺失占位跳过。改走PDF渲染＋OCR、官方HTML/XLSX或人工，不向下游喂空数据。
 
 映射中的行列均从 0 开始。`header_cells` 必须支持指标、观察年、单位；`scope_quote`、`class_quote` 和 `edition_quote` 必须存在于原文。若年份/单位只在表外说明而不能满足映射，先调整提取后端/原表结构或人工建立可核查证据，不凭配置强填。
 
@@ -29,7 +29,22 @@ python scripts/extract_tables.py --input examples/sample_table.html --format htm
 ## OCR
 
 ```text
-python scripts/ocr_image.py --input <扫描图> --output work/ocr_words.json --language chi_sim+eng
+python scripts/ocr_image.py --input <扫描图或PDF> --output work/ocr_words.json --cache-dir work/ocr_cache --engine rapidocr
 ```
 
-需要 Tesseract 和相应语言包，输出文字、坐标、置信度、源图哈希。无依赖时明确失败，不声称进行了 OCR。输出仅待视觉核查的识别结果，不能直接进入筛选器；需核对原图、行列、年份、单位、符号和脚注。当前没有完成真实扫描件 OCR 准确性验证。
+
+推荐 RapidOCR＋CPU ONNX Runtime。Windows 原生 OCR/Tesseract 是备用，必须检查语言及实际识别结果；本次北京原生OCR出现误读，不能把“后端可用”当准确。
+
+`ocr_image.py` 现在接受图片或PDF；PDF先用pypdfium2渲染。默认最多5页，剩余页记录队列，可用 `--max-pages` 调整，不宣称全书已读完。缓存包括原文件、页面、词坐标和校验值；低分或无评分的词在 `ocr_review.html` 中标红，高分也必须看原图。
+
+`ocr_extract.py` 对已覆盖的单城年份行和指标行布局自动找年、字段、单位和数值列，不用逐表行列 mapping。城市/版年由父发布页或书目路径推断并标需审核；复杂跨页、多城市扫描矩阵、混合口径或无法识别单位时明确待核，不猜值或补小数点。
+
+正文可使用 `document_extract.py`，证据是原文字符范围和规则回放；跨区域、其他年份、人均与总量、就业流量与存量不得混用。领域规则未覆盖的字段列入报告，不断言官方没有数据。
+
+完整有限路径：
+
+```text
+python scripts/run_pipeline.py --url <官方公报页> --config <项目配置> --registry <来源登记> --output work/case --media-limit 1 --ocr-engine rapidocr
+```
+
+直接官方PDF/图片可传 `--parent-url <原发布页>`，绑定附件链接、标题、数据年和发布日期。未解析、限额队列和候选审核状态保留在 `pipeline_report.json`；候选生成后仍需真实审核，再筛选导出。参见北京复现例。

@@ -18,6 +18,12 @@ def inside(root, relative):
 
 
 def verify(record, config, root, registry, parsed_cache):
+    if isinstance(record,dict) and isinstance(record.get('evidence'),dict) and record['evidence'].get('kind')=='article_span':
+        from document_evidence import verify_article
+        return verify_article(record,config,root,registry,parsed_cache)
+    if isinstance(record,dict) and isinstance(record.get('evidence'),dict) and record['evidence'].get('kind')=='ocr_layout':
+        from ocr_evidence import verify_ocr
+        return verify_ocr(record,config,root,registry,parsed_cache)
     errors, origin = [], {'capture_matched': False, 'authority': None}
     try:
         if not isinstance(record, dict):
@@ -107,6 +113,7 @@ def verify(record, config, root, registry, parsed_cache):
 
 
 def audit(records, config, evidence_root, registry):
+    if not records:return {'status':'empty_input','records':0,'passed':0,'failed':1,'machine_checks_passed':False,'source_files_read':0,'results':[],'note':'0 条记录，来源未解析，非数据齐全'}
     cache = {}
     results = [verify(r, config, evidence_root, registry, cache) for r in records]
     ids = [r['id'] for r in results]
@@ -123,6 +130,12 @@ def main():
     for name in ('records', 'config', 'evidence-root', 'registry', 'output'):
         p.add_argument('--' + name, required=True)
     a = p.parse_args()
+    extraction_report=Path(a.records+'.report.json')
+    if extraction_report.exists():
+        state=json.loads(extraction_report.read_text(encoding='utf-8-sig')).get('status')
+        if state in ('unparsed','empty_or_error'):
+            report={'status':'upstream_failed','machine_checks_passed':False,'reason':'上游提取未成功，拒绝继续核验空数据或旧输出','upstream_report':str(extraction_report)}
+            save(a.output,report);print(json.dumps(report,ensure_ascii=False));return 1
     report = audit(json.loads(Path(a.records).read_text(encoding='utf-8-sig')), json.loads(Path(a.config).read_text(encoding='utf-8-sig')), a.evidence_root, json.loads(Path(a.registry).read_text(encoding='utf-8-sig')))
     save(a.output, report)
     print(json.dumps({k: report[k] for k in ('records', 'passed', 'failed', 'machine_checks_passed', 'source_files_read')}))
