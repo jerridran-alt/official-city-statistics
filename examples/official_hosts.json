@@ -1,6 +1,6 @@
 {
   "hosts": [
-    {"host": "www.stats.gov.cn", "publisher": "国家统计局", "evidence_url": "https://www.stats.gov.cn/", "verified": true},
-    {"host": "www.lf.gov.cn", "publisher": "廊坊市人民政府", "evidence_url": "https://www.lf.gov.cn/Item/156066.aspx", "verified": true}
+    {"host": "www.stats.gov.cn", "publisher": "国家统计局", "publisher_id": "nbs", "level": "national", "evidence_url": "https://www.stats.gov.cn/", "verified": true},
+    {"host": "www.lf.gov.cn", "publisher": "廊坊市人民政府", "publisher_id": "langfang-government", "level": "city", "evidence_url": "https://www.lf.gov.cn/Item/156066.aspx", "verified": true}
   ]
 }

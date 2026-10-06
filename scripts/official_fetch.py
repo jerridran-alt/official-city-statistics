@@ -1,5 +1,6 @@
 """Bounded official-source retrieval and offline catalog discovery (stdlib only)."""
 import argparse
+import asyncio
 import hashlib
 import json
 import time
@@ -70,13 +71,44 @@ def inspect_html(body, url, charset='utf-8'):
     return links
 
 
+async def browser_html(url, hosts, timeout, selector):
+    try:
+        from playwright.async_api import async_playwright
+    except ImportError as exc:
+        raise RuntimeError('Browser backend requires playwright and its Chromium runtime; HTTP mode has no extra dependency') from exc
+    async with async_playwright() as runtime:
+        browser = await runtime.chromium.launch(headless=True)
+        try:
+            page = await browser.new_page()
+            async def guard(route):
+                request = route.request
+                if request.is_navigation_request():
+                    try:
+                        check_url(request.url, hosts)
+                    except ValueError:
+                        await route.abort()
+                        return
+                await route.continue_()
+            await page.route('**/*', guard)
+            response = await page.goto(url, wait_until='domcontentloaded', timeout=int(timeout * 1000))
+            if response is None or response.status >= 400:
+                raise ValueError('Browser navigation did not return a successful response')
+            if selector:
+                await page.wait_for_selector(selector, timeout=int(timeout * 1000))
+            check_url(page.url, hosts)
+            return (await page.content()).encode('utf8'), page.url
+        finally:
+            await browser.close()
+
+
 def fetch(args):
     registry = json.loads(Path(args.registry).read_text(encoding='utf-8-sig'))
     hosts = {r['host'].lower(): r for r in registry['hosts'] if r.get('verified') is True and r.get('publisher') and r.get('evidence_url')}
     owner = check_url(args.url, hosts)
     output = Path(args.output)
     output.mkdir(parents=True, exist_ok=True)
-    key = hashlib.sha256(args.url.encode()).hexdigest()[:24]
+    engine = getattr(args, 'engine', 'http')
+    key = hashlib.sha256((args.url + '\0' + engine).encode()).hexdigest()[:24]
     manifest = output / (key + '.json')
     if manifest.exists() and not args.refresh and not args.html:
         record = json.loads(manifest.read_text(encoding='utf-8'))
@@ -91,6 +123,11 @@ def fetch(args):
             raise ValueError('Offline input exceeds max-bytes')
         final_url, ctype, charset = args.url, 'text/html', args.encoding or 'utf-8'
         mode = 'offline_html'
+    elif engine == 'browser':
+        body, final_url = asyncio.run(browser_html(args.url, hosts, args.timeout, getattr(args, 'wait_selector', None)))
+        if len(body) > args.max_bytes:
+            raise ValueError('Rendered HTML exceeds max-bytes')
+        ctype, charset, mode = 'text/html; charset=utf-8', 'utf-8', 'browser_network'
     else:
         opener = urllib.request.build_opener(CheckedRedirect(hosts))
         for attempt in range(args.retries + 1):
@@ -114,7 +151,8 @@ def fetch(args):
     blob = output / (digest + '.bin')
     blob.write_bytes(body)
     links = inspect_html(body, final_url, charset) if 'html' in ctype.lower() else []
-    record = {'url': args.url, 'final_url': final_url, 'publisher': owner['publisher'], 'retrieved_at': datetime.now(timezone.utc).isoformat(), 'mode': mode, 'content_type': ctype, 'bytes': len(body), 'sha256': digest, 'file': blob.name, 'links': links, 'statistical_values_verified': False}
+    owner = check_url(final_url, hosts)
+    record = {'url': args.url, 'final_url': final_url, 'publisher': owner['publisher'], 'retrieved_at': datetime.now(timezone.utc).isoformat(), 'mode': mode, 'engine': engine, 'rendered_dom': engine == 'browser', 'content_type': ctype, 'bytes': len(body), 'sha256': digest, 'file': blob.name, 'links': links, 'statistical_values_verified': False}
     # Offline inspections must not replace a previously retrieved network manifest.
     target = output / (key + '.offline.json') if args.html else manifest
     write_json(target, record)
@@ -127,6 +165,8 @@ def main():
         p.add_argument('--' + key, required=True)
     p.add_argument('--html', help='Parse an existing HTML file without network')
     p.add_argument('--encoding')
+    p.add_argument('--engine', choices=('http', 'browser'), default='http')
+    p.add_argument('--wait-selector', help='Browser mode: wait for a specific table/content selector')
     p.add_argument('--refresh', action='store_true')
     p.add_argument('--timeout', type=float, default=25)
     p.add_argument('--retries', type=int, choices=(0, 1), default=1)

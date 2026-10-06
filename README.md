@@ -1,51 +1,51 @@
 # 官方城市统计数据采集 Skill
 
-A Codex skill for collecting original city statistics from official Chinese government publications.
+A configurable Codex skill for collecting original city statistics from official Chinese publications.
 
-帮助研究者从国家统计局、省级统计局、市县统计局和政府门户查找统计年鉴、公报及其他政府性质文件，保存原始证据，并按研究指标、版本和统计口径补充城市—年份面板。
+从官方年鉴、发展公报和政府文件采集来源、读取表格、核对证据并筛选版本。城市、年份、指标、优先级及交付格式由配置决定，不依赖 GFPS 或私有流水线。
 
-## 内容
+**按表采集，按城市查缺。** 一张省级/全国表格读取一次，提取图表全部城市所需的数据，包含研究名单外城市，缓存原文件和结构化表格，后续城市复用缓存。
 
-- `SKILL.md`：采集、核验、版本选择、行政区划与断点规则。
-- `scripts/official_fetch.py`：静态目录提取、附件下载、原文件缓存、SHA256 校验和失败记录。
-- `scripts/audit_candidates.py`：检查新增候选的字段、观察年、指标范围和核验声明。
-- `references/`：GFPS 项目适配、提取后端及候选记录规范。
-- `examples/`：最小配置和原数记录示例，不包含完整研究数据。
-- `tests/`：可离线运行的功能测试。
+## 能力
 
-两个脚本只依赖 Python 标准库，建议 Python 3.10 或更新版本。Crawl4AI、Playwright、Docling 和 OCR 是复杂页面、扫描件的可选后端，不是脚本必装依赖。
+| 脚本 | 功能 | 依赖/边界 |
+|---|---|---|
+| `official_fetch.py` | 单页/附件缓存、URL及SHA256记录、可选浏览器渲染 | HTTP为标准库；浏览器需Playwright及Chromium |
+| `collect_sources.py` | 按深度和页面限额遍历统计目录 | 有限遍历，不保证整站完整 |
+| `extract_tables.py` | HTML合并表头、CSV、XLSX、文本PDF表格；多城市原数抽取 | HTML/CSV/XLSX为标准库；PDF需pdfplumber；字段映射需要核对 |
+| `ocr_image.py` | 扫描图OCR文字、坐标、置信度及图像哈希 | 需Tesseract及语言包；不能自动认证数字 |
+| `audit_candidates.py` | 重读原文件，核对数值格、城市行、表头、上下文和采集清单 | 机械一致性检查，统计语义仍需审核 |
+| `select_panel.py` | 单独审核后按配置优先级/版年筛选，输出JSON/CSV | 保留冲突及待核项，不估算、不换算单位 |
 
-## 使用
+建议 Python 3.10+。不直接读取旧 `.xls`，不计算 XLSX 公式，不保证扫描件、图表及复杂无边框 PDF 可直接解析。可选浏览器/OCR后端未完成真实网站及真实扫描件端到端准确性验证。
 
-将此仓库放入 Codex 的技能目录，并保持文件夹名称为 `official-city-statistics`。技能可用后，以 `$official-city-statistics` 调用，并说明项目目录、城市名单、数据年份和需要的指标。
+## 离线快速体验
 
-GFPS 配置默认讨论 369 个研究单位、2011—2025 年。其他项目应提供自己的配置，不直接套用这组样本或年份。技能不附带 GFPS 的私有流水线程序，也不是能自动填满所有城市数据的一键数据库。
-
-在仓库根目录测试静态采集：
-
-```bash
-python scripts/official_fetch.py --url https://www.lf.gov.cn/Item/156066.aspx --registry examples/official_hosts.json --output work/cache
-```
-
-核实网站身份后，在自己的域名注册表添加具体域名。示例域名表仅包含少数已知官网，不是全国官方来源的完整清单。脚本精确匹配域名，跨域重定向也需核实；链接提取不自动证明来源或数值正确。
-
-核查候选字段：
+`examples/sample_table.html` 是明确标注的教学合成表，不含真实研究数值；包含三座城市和一个省合计，研究配置仅包含其中两座城市。
 
 ```bash
-python scripts/audit_candidates.py --records examples/candidate.json --scope examples/research_scope.json --output work/candidate.audit.json
+python scripts/extract_tables.py --input examples/sample_table.html --format html --config examples/project.json --mapping examples/table_mapping.json --output work/candidates.json --cache-dir work/table_cache --evidence-root .
+python scripts/audit_candidates.py --records work/candidates.json --config examples/project.json --evidence-root . --registry examples/official_hosts.json --output work/audit.json
 python -m unittest discover -s tests -v
 ```
 
-## 数据规则
+第一条读取图表全部三座城市，生成六条原数候选；其中四条匹配当前研究名单，两条名单外原数仍保留，再次运行复用表格缓存。第二条核对原格及上下文；离线示例没有真实网络采集清单，**不能作为官方数据入库**。
 
-采用官方原始统计值，按 `年鉴 > 公报 > 其他政府文件`，同类来源采用最新刊载版本。出版年与观察年分别记录，不将“2026 年出版”误认为不能提供 2025 年数据。
+## 实际项目
 
-核对全市/市辖区范围、人口和就业口径、单位、能源范围、贷款币种及区划变更。空白不填零，不根据增长率反推金额，不用规上工业能源替代全社会能源。保留全部冲突来源，不取均值。
+1. 创建项目配置：稳定研究ID、城市名称/明确别名、观察年份、原始指标。
+2. 核实官网及发布者，维护来源注册表，按有限深度采集目录与附件。
+3. 检查原表，配置表号、城市列、起始行、指标列和表头位置，一次抽取图表全部城市，再匹配研究名单。
+4. 保存原文件，重读核验证据，单独记录来源、脚注及口径审核，再筛选导出。
 
-最终研究面板与来源审计分开保存。采集脚本不直接写 Excel；审核通过后由研究项目自身的入库和导出流程处理。
+当前需求的模板采用 **国家统计局 > 各省统计年鉴 > 发展公报 > 其他政府官方文件**，同级取最新版。其他研究者可修改，不是所有项目的强制来源顺序。
 
-## 验证范围
+程序不会因几个核验布尔值为 true 就相信候选；它重读原文件并核对实际数据位置及采集清单。官网身份、版本类别、脚注语义仍有人工信任边界，见[证据规范](references/records.md)。配置见[项目配置](references/config.md)，PDF/OCR和采集命令见[提取后端](references/extraction.md)。
 
-静态网页采集、离线目录解析、缓存完整性和候选结构检查已经测试。候选审计只检查结构与核验声明，不能代替原文核实。没有验证全体政府网站的可访问性，也没有完成扫描件 OCR 的端到端准确性测试。
+缓存、审核记录与最终面板分别保存。Excel等交付形式由用户项目选择，核心脚本不绑定私有导出器。
 
-示例原数来自[廊坊市政府发布的 2025 年统计公报](https://www.lf.gov.cn/Item/156066.aspx)。它用于展示记录格式，不构成完整城市数据集。
+## 在 Codex 中使用
+
+将仓库放入技能目录，文件夹名称保持 `official-city-statistics`，技能可用后以 `$official-city-statistics` 调用，并说明项目目录与配置。`SKILL.md` 是入口。
+
+这是开发中的工具，没有大规模使用或OCR准确性保证。欢迎通过 [Issues](https://github.com/jerridran-alt/official-city-statistics/issues) 提供可公开的来源结构、问题和复现步骤；不要提交私人数据或凭据。

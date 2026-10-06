@@ -1,0 +1,17 @@
+{
+  "source_class": "yearbook",
+  "edition": 2025,
+  "class_quote": "统计年鉴（教学合成）",
+  "edition_quote": "2025年统计年鉴",
+  "tables": [{
+    "table_index": 0,
+    "city_column": 0,
+    "data_start_row": 2,
+    "scope": "全市",
+    "scope_quote": "地域范围：全市",
+    "columns": [
+      {"column": 1, "indicator": "地区生产总值", "year": 2024, "unit": "亿元", "header_cells": [[0, 1], [1, 1]]},
+      {"column": 2, "indicator": "全社会用电量", "year": 2024, "unit": "亿千瓦时", "header_cells": [[0, 2], [1, 2]]}
+    ]
+  }]
+}

@@ -1,0 +1,14 @@
+{
+  "years": [2024, 2024],
+  "units": [
+    {"id": "131000", "name": "廊坊市", "aliases": []},
+    {"id": "131100", "name": "衡水市", "aliases": []}
+  ],
+  "keep_indicators": ["地区生产总值", "全社会用电量"],
+  "source_priorities": [
+    {"name": "国家统计局", "match": {"publisher_id": "nbs"}},
+    {"name": "各省统计年鉴", "match": {"authority_level": "province", "source_class": "yearbook"}},
+    {"name": "发展公报", "match": {"source_class": "communique"}},
+    {"name": "其余政府官方文件", "match": {}}
+  ]
+}
