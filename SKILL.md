@@ -26,6 +26,8 @@ license: MIT
 
 ## 可执行流程
 
+多城市扫描矩阵或跨页续表使用 `scripts/ocr_matrix.py`，先读[矩阵与受控跨页](references/matrix-extraction.md)：自动提出已识别年份列/城市行映射，或建立每页明确映射；核对同表身份、各页单位及城市标签后提取，不按行号硬拼。矩阵审核还须绑定 `plan_sha256`；未知/未映射结构、无城市列或断行续页仍待核。PDF可按原页码选择OCR，不修改原PDF。
+
 1. 核实发布者和官网，在外部来源注册表记录依据。`scripts/official_fetch.py` 缓存单页/附件；`scripts/collect_sources.py` 按页面和深度限额遍历统计目录。动态页可使用明确选择的浏览器后端；遵循当前环境的浏览器操作限制，不能绕过工具权限。
 2. `scripts/extract_tables.py` 支持 HTML、CSV、XLSX，以及安装 pdfplumber 后的文本型 PDF。用字段映射绑定指标、观察年、单位和原表位置，批量输出图表全部城市的所需原数。公报正文可用 `scripts/document_extract.py` 自动绑定标题城市/年、原句及数值，不需逐表 mapping。图片/扫描 PDF 使用 `scripts/ocr_image.py`（PDF渲染＋OCR）与 `scripts/ocr_extract.py` 自动识别已支持的年份行/指标行布局，保存位置和缓存；结果必须视觉核对。**PDF提取到0表或结构可疑时，立即停止该解析路径，标记待人工/OCR，不得继续向下游喂空数据。** 置信度低/无评分的词进入红色审核报告，不以高分当真值。具体能力与命令见 [references/extraction.md](references/extraction.md)。
 3. `scripts/audit_candidates.py` **重新读取原文件**，校验 SHA256、数值单元格、城市行、原表头和引用上下文；对照网络采集清单和外部来源注册表。调用方填写的 `official_verified/value_verified/scope_verified` 不会赋予信任。证据结构和人工审核规则见 [references/records.md](references/records.md)。
@@ -42,8 +44,8 @@ license: MIT
 
 ## 真实验证边界
 
-[江苏真实多城市例](references/jiangsu-validation.md)：官方HTML用电量单表13城×2018—2024，91原数；小名单仍读全部城市，扩大名单复用缓存。此例覆盖结构化HTML及目录证据链，不解除多城市扫描矩阵/跨页表待核边界。
+[江苏真实多城市例](references/jiangsu-validation.md)：官方HTML用电量单表13城×2018—2024，91原数；小名单仍读全部城市，扩大名单复用缓存。此例覆盖结构化HTML及目录证据链，不证明扫描矩阵/跨页表；这两类另按矩阵案例及待核边界处理。
 
-以[验证覆盖矩阵](references/coverage.md)区分“真实案例”“合成/衍生测试”和“待核”。不得把北京正文＋一张GDP图的成功转移为其他布局可靠；多页/跨页关系、多城市扫描矩阵或未知结构保守阻断自动解释，保留原件/OCR和待核队列。
+以[验证覆盖矩阵](references/coverage.md)区分“网络真实案例”“真实存档OCR验证”“合成/衍生测试”和“待核”。不得把单一案例转移为所有布局可靠；矩阵/跨页需明确页映射与原件回放，未覆盖关系保留原件/OCR和待核队列。河北90值、重庆原PDF主表/续表78值已对照参考，但存档验证不冒充新增网络获取或正式面板入库。
 
-[北京实测](references/beijing-validation.md) 已跑通官方正文＋GDP图片→16候选→原文/图复核→12项单城市年面板。零文字层扫描路径用同图生成的测试PDF验证，不冒充官方原PDF。无边框/碎裂合并表头PDF有必跑失败回归；复杂跨页、多城市扫描矩阵和未覆盖布局仍标待核，不能将一次北京验证泛化为全部版式可靠。
+[北京实测](references/beijing-validation.md) 已跑通官方正文＋GDP图片→16候选→原文/图复核→12项单城市年面板。零文字层扫描路径用同图生成的测试PDF验证，不冒充官方原PDF。无边框/碎裂合并表头PDF有必跑失败回归；未知复杂跨页及扫描布局仍标待核，不能将一次北京或矩阵验证泛化为全部版式可靠。

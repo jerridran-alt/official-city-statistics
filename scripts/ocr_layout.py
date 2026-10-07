@@ -3,6 +3,16 @@ import argparse,hashlib,importlib.util,json,platform,shutil,subprocess,tempfile,
 from pathlib import Path
 from stats_core import save
 
+def is_pdf(source):
+    with source.open('rb') as f:prefix=f.read(5)
+    return source.suffix.lower()=='.pdf' or prefix==b'%PDF-'
+
+def source_digest(source):
+    h=hashlib.sha256()
+    with source.open('rb') as f:
+        for block in iter(lambda:f.read(1024*1024),b''):h.update(block)
+    return h.hexdigest()
+
 
 def choose_engine(requested='auto'):
     if requested!='auto':return requested
@@ -15,14 +25,16 @@ def choose_engine(requested='auto'):
     raise RuntimeError('No Chinese OCR backend available. Run doctor.py, then bootstrap.py --profile ocr, or install a supported OCR language/backend.')
 
 
-def render_pages(source,scale,max_pages=5):
+def render_pages(source,scale,max_pages=5,page_numbers=None):
     try:from PIL import Image
     except ImportError as exc:raise RuntimeError('Image/PDF OCR requires Pillow; run bootstrap.py --profile basic') from exc
-    if source.suffix.lower()=='.pdf' or source.read_bytes()[:5]==b'%PDF':
+    if is_pdf(source):
         try:import pypdfium2 as pdfium
         except ImportError as exc:raise RuntimeError('Scanned PDF rendering requires pypdfium2; run bootstrap.py --profile basic') from exc
         doc=pdfium.PdfDocument(source)
-        for i in range(min(len(doc),max_pages)):
+        indices=[n-1 for n in page_numbers] if page_numbers else list(range(min(len(doc),max_pages)))
+        if any(i<0 or i>=len(doc) for i in indices):raise ValueError('Selected PDF page outside original document')
+        for i in indices:
             bitmap=doc[i].render(scale=scale);image=bitmap.to_pil().convert('RGB')
             yield i+1,image
         doc.close()
@@ -31,12 +43,13 @@ def render_pages(source,scale,max_pages=5):
             yield 1,im.convert('RGB').resize((round(im.width*scale),round(im.height*scale)))
 
 
-def run_ocr(source,cache_dir,engine='auto',scale=3.0,language='zh-Hans-CN',tile_size=3000,min_confidence=.85,max_pages=5):
-    source=Path(source).resolve();digest=hashlib.sha256(source.read_bytes()).hexdigest();engine=choose_engine(engine)
+def run_ocr(source,cache_dir,engine='auto',scale=3.0,language='zh-Hans-CN',tile_size=3000,min_confidence=.85,max_pages=5,page_numbers=None):
+    source=Path(source).resolve();digest=source_digest(source);engine=choose_engine(engine)
     if engine=='windows':
         from doctor import diagnose
         tile_size=min(tile_size,diagnose()['windows_ocr'].get('max_dimension',tile_size))
-    profile={'engine':engine,'scale':scale,'language':language,'tile_size':tile_size,'version':'1.1','min_confidence':min_confidence,'max_pages':max_pages}
+    if page_numbers and (len(page_numbers)>max_pages or len(set(page_numbers))!=len(page_numbers) or any(type(n)!=int or n<1 for n in page_numbers)):raise ValueError('PDF page selection must be unique positive page numbers within max-pages limit')
+    profile={'engine':engine,'scale':scale,'language':language,'tile_size':tile_size,'version':'1.2','min_confidence':min_confidence,'max_pages':max_pages,'page_numbers':page_numbers}
     if engine=='windows':profile['backend_script_sha256']=hashlib.sha256(Path(__file__).with_name('windows_ocr.ps1').read_bytes()).hexdigest()
     key=hashlib.sha256((digest+json.dumps(profile,sort_keys=True)).encode()).hexdigest()
     cache=(Path(cache_dir)/key).resolve();cache.mkdir(parents=True,exist_ok=True);result_file=cache/'layout.json';checksum=cache/'layout.sha256'
@@ -48,7 +61,7 @@ def run_ocr(source,cache_dir,engine='auto',scale=3.0,language='zh-Hans-CN',tile_
             raise SourceFailure('OCR_EMPTY','缓存OCR也为0词，来源未解析，非数据齐全')
         return data,result_file,True
     started=time.monotonic();jobs=[];pages=[];tiles=[]
-    for page_no,image in render_pages(source,scale,max_pages):
+    for page_no,image in render_pages(source,scale,max_pages,page_numbers):
         path=cache/f'page-{page_no}.png';image.save(path)
         pages.append({'page':page_no,'image_file':path.name,'image_sha256':hashlib.sha256(path.read_bytes()).hexdigest(),'width':image.width,'height':image.height,'words':[]})
         step=max(1,tile_size-120)
@@ -84,7 +97,7 @@ def run_ocr(source,cache_dir,engine='auto',scale=3.0,language='zh-Hans-CN',tile_
     for tile in tiles:
         doc=json.loads(tile['output'].read_text(encoding='utf-8-sig'))
         if doc.get('error'):raise RuntimeError(doc['error'])
-        page=pages[tile['page']-1]
+        page=next(p for p in pages if p['page']==tile['page'])
         for line in doc['lines']:
             for w in line['words']:
                 item={'text':w['text'],'bbox':[w['x']+tile['left'],w['y']+tile['top'],w['width'],w['height']],'confidence':w.get('confidence')}
@@ -99,7 +112,7 @@ def run_ocr(source,cache_dir,engine='auto',scale=3.0,language='zh-Hans-CN',tile_
     review=[{'page':p['page'],'word_index':i,'text':w['text'],'bbox':w['bbox'],'confidence':w['confidence'],'reason':'score_unavailable' if w['confidence'] is None else 'low_score'} for p in pages for i,w in enumerate(p['words']) if w['confidence'] is None or w['confidence']<min_confidence]
     data={'source_sha256':digest,'source_name':source.name,'profile':profile,'pages':pages,'seconds':round(time.monotonic()-started,3),'ocr_status':'needs_visual_review','note':'Coordinates refer to the rendered page pixels. OCR consistency is not proof of glyph accuracy.'}
     data['low_confidence_review']=review
-    if source.suffix.lower()=='.pdf' or source.read_bytes()[:5]==b'%PDF':
+    if is_pdf(source):
         import pypdfium2 as pdfium
         check=pdfium.PdfDocument(source);data['total_pdf_pages']=len(check);check.close();data['pages_queued']=max(0,data['total_pdf_pages']-len(pages))
     else:data['pages_queued']=0
@@ -115,10 +128,12 @@ def main():
     p.add_argument('--input',required=True);p.add_argument('--output',required=True);p.add_argument('--cache-dir',required=True);p.add_argument('--language',default='zh-Hans-CN')
     p.add_argument('--engine',choices=('auto','windows','rapidocr','tesseract'),default='auto');p.add_argument('--scale',type=float,default=3)
     p.add_argument('--max-pages',type=int,default=5);p.add_argument('--min-confidence',type=float,default=.85)
+    p.add_argument('--pages',help='Comma-separated original PDF page numbers; no renumbering or PDF rewriting')
     a=p.parse_args()
     try:
         if not 1<=a.max_pages<=100 or not 0<=a.min_confidence<=1:raise ValueError('max-pages must be 1..100; min-confidence must be 0..1')
-        data,artifact,reused=run_ocr(a.input,a.cache_dir,a.engine,a.scale,language=a.language,min_confidence=a.min_confidence,max_pages=a.max_pages);save(a.output,data)
+        selection=[int(n) for n in a.pages.split(',')] if a.pages else None
+        data,artifact,reused=run_ocr(a.input,a.cache_dir,a.engine,a.scale,language=a.language,min_confidence=a.min_confidence,max_pages=a.max_pages,page_numbers=selection);save(a.output,data)
         print(json.dumps({'status':'ocr_candidates','pages':len(data['pages']),'words':sum(len(p['words']) for p in data['pages']),'engine':data['profile']['engine'],'cache_reused':reused,'layout':str(artifact),'seconds':data['seconds'],'review_words':len(data.get('low_confidence_review',[]))}))
         return 0
     except Exception as exc:

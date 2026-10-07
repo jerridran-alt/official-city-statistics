@@ -18,6 +18,9 @@ def inside(root, relative):
 
 
 def verify(record, config, root, registry, parsed_cache):
+    if isinstance(record,dict) and isinstance(record.get('evidence'),dict) and record['evidence'].get('kind')=='ocr_matrix':
+        from matrix_evidence import verify_matrix
+        return verify_matrix(record,config,root,registry,parsed_cache)
     if isinstance(record,dict) and isinstance(record.get('evidence'),dict) and record['evidence'].get('kind')=='article_span':
         from document_evidence import verify_article
         return verify_article(record,config,root,registry,parsed_cache)
@@ -135,7 +138,7 @@ def main():
     extraction_report=Path(a.records+'.report.json')
     if extraction_report.exists():
         state=json.loads(extraction_report.read_text(encoding='utf-8-sig')).get('status')
-        if state in ('unparsed','empty_or_error'):
+        if state in ('unparsed','empty_or_error','partial_pending'):
             report={'status':'upstream_failed','machine_checks_passed':False,'reason':'上游提取未成功，拒绝继续核验空数据或旧输出','upstream_report':str(extraction_report)}
             save(a.output,report);print(json.dumps(report,ensure_ascii=False));return 1
     report = audit(json.loads(Path(a.records).read_text(encoding='utf-8-sig')), json.loads(Path(a.config).read_text(encoding='utf-8-sig')), a.evidence_root, json.loads(Path(a.registry).read_text(encoding='utf-8-sig')))

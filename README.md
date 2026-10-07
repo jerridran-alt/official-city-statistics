@@ -17,7 +17,9 @@ A configurable Codex skill for collecting original city statistics from official
 
 ## 验证范围
 
-**真实验证范围** 当前真实端到端覆盖包括北京2025公报正文、GDP一张单页指标行图片，以及江苏2025年鉴表9-10的13城市用电量HTML表；扫描PDF使用同图生成的测试副本。复杂跨页、多城市扫描矩阵和未覆盖布局仍待核，不能泛化。详见[验证覆盖矩阵](references/coverage.md)，运行报告也包含该范围。
+**真实验证范围** 当前网络真实端到端覆盖包括北京2025公报正文、GDP一张单页指标行图片，以及江苏2025年鉴表9-10的13城市用电量HTML表；零文字层PDF使用北京同图生成的测试副本。未映射的复杂跨页、多城市扫描矩阵及未知布局仍待核，不能泛化。详见[验证覆盖矩阵](references/coverage.md)，运行报告也包含该范围。
+
+新增[真实存档矩阵与跨页验证](references/matrix-extraction.md)：河北用电量原图15标签×6年90值，重庆原PDF主表/续表39标签×2人口口径78值，均与原件参考一致。新后端按明确页/列映射提取，未映射/未知跨页关系仍待核；本轮存档测试没有新增网络采集或正式入库资格。
 
 ## 能力与边界
 
@@ -29,6 +31,7 @@ A configurable Codex skill for collecting original city statistics from official
 |`document_extract.py`|公报正文的原句、字位和已支持指标规则|自动识别标题城市/数据年；排除跨区域、人均/总量混淆等；未覆盖规则明确报告|
 |`ocr_image.py` / `ocr_layout.py`|图片/扫描PDF渲染＋中文OCR、词坐标、缓存、低分报告|推荐RapidOCR＋CPU ONNX；识别分数不是字形真值|
 |`ocr_extract.py`|已覆盖的单城年份行/指标行图自动找字段、年、单位和数值列|仍需视觉复核；复杂跨页、多城市扫描矩阵及混合口径待适配，不猜值|
+|`ocr_matrix.py` / `matrix_evidence.py`|多城市矩阵提案、受控原页映射与跨页证据回放|城市/脚注行独立，续表须同表身份及单位锚点；无城市列/半行断裂仍待核|
 |`run_pipeline.py`|连接官方获取、正文/图片候选和证据核验|有界媒体/页数，保留未处理队列；候选不自动批准|
 |`audit_candidates.py`|重读原文或回放OCR证据、核对采集链|三个自填核验布尔值不赋予信任；统计语义仍需真实审核|
 |`select_panel.py` / `export_panel.py`|审核后选版本，输出原数JSON/城市年份CSV|先匹配再排来源；不换单位、不估算、不填零|
@@ -87,7 +90,7 @@ python scripts/extract_tables.py --input examples/sample_table.html --format htm
 python scripts/bootstrap.py --venv .venv --profile test
 ```
 
-然后使用隔离环境Python执行`-m unittest discover -s tests -v`。当前46项测试在独立环境中全部实际执行，无跳过；另有江苏真实91格参考例，不包含浏览器真实网站的全面验证。
+然后使用隔离环境Python执行`-m unittest discover -s tests -v`。当前64项测试在独立环境中全部实际执行，无跳过；另有江苏91格、河北90格与重庆跨页78格真实参考例，不包含浏览器真实网站的全面验证。
 
 ## 来源与口径
 

@@ -30,6 +30,8 @@ python scripts/select_panel.py --records work/candidates.json --config examples/
 
 OCR候选使用 `ocr_layout`：原文件哈希、OCR工件哈希、页码、数值/表头/年份词索引，以及父发布页或书目上下文。审核程序检查采集链和回放位置解释，但 `glyph_accuracy_certified=false`，仍须查看原图。OCR候选不得凭三个旧布尔值或识别置信度自动批准。
 
+矩阵候选使用 `ocr_matrix`，增加原页城市词、跨页表头锚点和 `matrix_plan/plan_sha256`。审核程序重读计划与原件并回放；审核决定还须绑定相同 `plan_sha256`，改计划后旧审核失效。`partial_pending` 上游阻断下游，即使已输出部分候选也不当成功。真实离线存档模式 `archived_original` 不冒充新网络清单，`origin.capture_matched=false`，不得自动正式入库。见[矩阵流程](matrix-extraction.md)。
+
 上游报告为unparsed或empty_or_error时，审核CLI阻断空数据与旧输出；空审核输入、空选择、空面板不返回成功。失败区分network、parse、environment及eligibility，有界网络重试，解析/配置问题先换后端或核对源。
 
 选择后可运行 `export_panel.py --input selected.json --output panel.csv`，生成城市—年份宽表。单位写在列名，金额和比例不换算；目标缺项仍留空，导出成功不等于全样本齐全。

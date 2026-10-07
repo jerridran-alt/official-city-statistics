@@ -36,7 +36,8 @@ def select(records, config, report, reviews):
         review = decisions.get(r['id'], {})
         if review.get('decision')=='reject' and review.get('source_sha256')==r['evidence']['sha256'] and review.get('reviewer') and review.get('reason'):
             excluded.append({'id':r['id'],'city':r['city'],'reason':'explicit documented rejection: '+review['reason']});continue
-        if not check or not check['machine_checks_passed'] or not check['origin']['capture_matched'] or review.get('decision') != 'approve' or review.get('source_sha256') != r['evidence']['sha256'] or not review.get('reviewer') or not review.get('reason'):
+        plan_review_ok=r['evidence'].get('kind')!='ocr_matrix' or review.get('plan_sha256')==r['evidence'].get('plan_sha256')
+        if not check or not check['machine_checks_passed'] or not check['origin']['capture_matched'] or not plan_review_ok or review.get('decision') != 'approve' or review.get('source_sha256') != r['evidence']['sha256'] or not review.get('reviewer') or not review.get('reason'):
             pending.append({'id': r['id'], 'reason': 'missing consistent original evidence, network capture, or separate documented semantic review'})
             continue
         rank = priority(r, check['origin']['authority'], config['source_priorities'])

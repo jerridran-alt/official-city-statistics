@@ -1,0 +1,559 @@
+{
+  "source_url": "https://tjj.cq.gov.cn/cslm/tjsjzl/202603/P020260330529346889373.pdf",
+  "source_sha256": "6c7219649073ed7106f654f8b26afc6205ad94c6dcd06276a3075b5f8ebda2bd",
+  "reference_type": "original PDF text row cross-check plus source-page visual inspection; not independent glyph accuracy estimate",
+  "year": 2024,
+  "original_pages": [
+    593,
+    596
+  ],
+  "table": "20-1 and continuation 3",
+  "records": [
+    {
+      "city": "万州区",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 168.98,
+      "unit": "万人"
+    },
+    {
+      "city": "黔江区",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 55.27,
+      "unit": "万人"
+    },
+    {
+      "city": "涪陵区",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 110.79,
+      "unit": "万人"
+    },
+    {
+      "city": "渝中区",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 49.05,
+      "unit": "万人"
+    },
+    {
+      "city": "大渡口区",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 29.97,
+      "unit": "万人"
+    },
+    {
+      "city": "江北区",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 66.39,
+      "unit": "万人"
+    },
+    {
+      "city": "沙坪坝区",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 99.56,
+      "unit": "万人"
+    },
+    {
+      "city": "九龙坡区",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 102.86,
+      "unit": "万人"
+    },
+    {
+      "city": "南岸区",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 83.05,
+      "unit": "万人"
+    },
+    {
+      "city": "北碚区",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 67.08,
+      "unit": "万人"
+    },
+    {
+      "city": "渝北区",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 165.16,
+      "unit": "万人"
+    },
+    {
+      "city": "巴南区",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 99.03,
+      "unit": "万人"
+    },
+    {
+      "city": "长寿区",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 85.9,
+      "unit": "万人"
+    },
+    {
+      "city": "江津区",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 144.59,
+      "unit": "万人"
+    },
+    {
+      "city": "合川区",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 145.49,
+      "unit": "万人"
+    },
+    {
+      "city": "永川区",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 112.73,
+      "unit": "万人"
+    },
+    {
+      "city": "南川区",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 67.08,
+      "unit": "万人"
+    },
+    {
+      "city": "綦江区",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 114.79,
+      "unit": "万人"
+    },
+    {
+      "city": "#綦江区(不含万盛)",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 89.27,
+      "unit": "万人"
+    },
+    {
+      "city": "大足区",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 105.98,
+      "unit": "万人"
+    },
+    {
+      "city": "璧山区",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 65.88,
+      "unit": "万人"
+    },
+    {
+      "city": "铜梁区",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 83.29,
+      "unit": "万人"
+    },
+    {
+      "city": "潼南区",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 93.15,
+      "unit": "万人"
+    },
+    {
+      "city": "荣昌区",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 83.1,
+      "unit": "万人"
+    },
+    {
+      "city": "开州区",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 164.0,
+      "unit": "万人"
+    },
+    {
+      "city": "梁平区",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 90.02,
+      "unit": "万人"
+    },
+    {
+      "city": "武隆区",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 39.88,
+      "unit": "万人"
+    },
+    {
+      "city": "城口县",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 24.64,
+      "unit": "万人"
+    },
+    {
+      "city": "丰都县",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 78.4,
+      "unit": "万人"
+    },
+    {
+      "city": "垫江县",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 93.36,
+      "unit": "万人"
+    },
+    {
+      "city": "忠县",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 93.38,
+      "unit": "万人"
+    },
+    {
+      "city": "云阳县",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 129.77,
+      "unit": "万人"
+    },
+    {
+      "city": "奉节县",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 102.55,
+      "unit": "万人"
+    },
+    {
+      "city": "巫山县",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 61.37,
+      "unit": "万人"
+    },
+    {
+      "city": "巫溪县",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 52.45,
+      "unit": "万人"
+    },
+    {
+      "city": "石柱县",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 53.96,
+      "unit": "万人"
+    },
+    {
+      "city": "秀山县",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 67.48,
+      "unit": "万人"
+    },
+    {
+      "city": "酉阳县",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 84.77,
+      "unit": "万人"
+    },
+    {
+      "city": "彭水县",
+      "page": 593,
+      "indicator": "户籍人口",
+      "value": 69.52,
+      "unit": "万人"
+    },
+    {
+      "city": "万州区",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 153.88,
+      "unit": "万人"
+    },
+    {
+      "city": "黔江区",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 49.39,
+      "unit": "万人"
+    },
+    {
+      "city": "涪陵区",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 110.01,
+      "unit": "万人"
+    },
+    {
+      "city": "渝中区",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 57.35,
+      "unit": "万人"
+    },
+    {
+      "city": "大渡口区",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 44.72,
+      "unit": "万人"
+    },
+    {
+      "city": "江北区",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 95.66,
+      "unit": "万人"
+    },
+    {
+      "city": "沙坪坝区",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 149.43,
+      "unit": "万人"
+    },
+    {
+      "city": "九龙坡区",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 154.83,
+      "unit": "万人"
+    },
+    {
+      "city": "南岸区",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 121.37,
+      "unit": "万人"
+    },
+    {
+      "city": "北碚区",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 84.66,
+      "unit": "万人"
+    },
+    {
+      "city": "渝北区",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 228.92,
+      "unit": "万人"
+    },
+    {
+      "city": "巴南区",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 121.52,
+      "unit": "万人"
+    },
+    {
+      "city": "长寿区",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 67.94,
+      "unit": "万人"
+    },
+    {
+      "city": "江津区",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 133.6,
+      "unit": "万人"
+    },
+    {
+      "city": "合川区",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 120.71,
+      "unit": "万人"
+    },
+    {
+      "city": "永川区",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 114.58,
+      "unit": "万人"
+    },
+    {
+      "city": "南川区",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 55.09,
+      "unit": "万人"
+    },
+    {
+      "city": "綦江区",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 98.59,
+      "unit": "万人"
+    },
+    {
+      "city": "#綦江区(不含万盛)",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 75.69,
+      "unit": "万人"
+    },
+    {
+      "city": "大足区",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 82.29,
+      "unit": "万人"
+    },
+    {
+      "city": "璧山区",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 76.75,
+      "unit": "万人"
+    },
+    {
+      "city": "铜梁区",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 68.01,
+      "unit": "万人"
+    },
+    {
+      "city": "潼南区",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 68.04,
+      "unit": "万人"
+    },
+    {
+      "city": "荣昌区",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 66.03,
+      "unit": "万人"
+    },
+    {
+      "city": "开州区",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 117.85,
+      "unit": "万人"
+    },
+    {
+      "city": "梁平区",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 62.49,
+      "unit": "万人"
+    },
+    {
+      "city": "武隆区",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 34.87,
+      "unit": "万人"
+    },
+    {
+      "city": "城口县",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 19.66,
+      "unit": "万人"
+    },
+    {
+      "city": "丰都县",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 54.05,
+      "unit": "万人"
+    },
+    {
+      "city": "垫江县",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 63.14,
+      "unit": "万人"
+    },
+    {
+      "city": "忠县",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 69.12,
+      "unit": "万人"
+    },
+    {
+      "city": "云阳县",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 90.55,
+      "unit": "万人"
+    },
+    {
+      "city": "奉节县",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 73.03,
+      "unit": "万人"
+    },
+    {
+      "city": "巫山县",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 45.45,
+      "unit": "万人"
+    },
+    {
+      "city": "巫溪县",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 37.67,
+      "unit": "万人"
+    },
+    {
+      "city": "石柱县",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 38.96,
+      "unit": "万人"
+    },
+    {
+      "city": "秀山县",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 49.79,
+      "unit": "万人"
+    },
+    {
+      "city": "酉阳县",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 59.54,
+      "unit": "万人"
+    },
+    {
+      "city": "彭水县",
+      "page": 596,
+      "indicator": "年末常住人口",
+      "value": 50.93,
+      "unit": "万人"
+    }
+  ]
+}
