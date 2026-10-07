@@ -32,7 +32,7 @@ license: MIT
 
 多城市扫描矩阵或跨页续表使用 `scripts/ocr_matrix.py`，先读[矩阵与受控跨页](references/matrix-extraction.md)：自动提出已识别年份列/城市行映射，或建立每页明确映射；核对同表身份、各页单位及城市标签后提取，不按行号硬拼。矩阵审核还须绑定 `plan_sha256`；未知/未映射结构、无城市列或断行续页仍待核。PDF可按原页码选择OCR，不修改原PDF。
 
-1. 核实发布者和官网，在外部来源注册表记录依据。`scripts/official_fetch.py` 缓存单页/附件；`scripts/collect_sources.py` 按页面和深度限额遍历统计目录。动态页可使用明确选择的浏览器后端；遵循当前环境的浏览器操作限制，不能绕过工具权限。
+1. 对31省级入口使用 `scripts/province_access.py` 和可配置入口表，从官方目录发现实际年鉴链接；保留原协议及特殊版次路径，分开HTTP/HTTPS失败状态；锚点、框架和CDATA链接按原字节重读，不统一拼接年度网址。核实发布者和官网，在外部来源注册表记录依据。`scripts/official_fetch.py` 缓存单页/附件；`scripts/collect_sources.py` 按页面和深度限额遍历统计目录。动态页可使用明确选择的浏览器后端；遵循当前环境的浏览器操作限制，不能绕过工具权限。
 2. `scripts/extract_tables.py` 支持 HTML、CSV、XLSX，以及安装 pdfplumber 后的文本型 PDF。用字段映射绑定指标、观察年、单位和原表位置，批量输出图表全部城市的所需原数。公报正文可用 `scripts/document_extract.py` 自动绑定标题城市/年、原句及数值，不需逐表 mapping。图片/扫描 PDF 使用 `scripts/ocr_image.py`（PDF渲染＋OCR）与 `scripts/ocr_extract.py` 自动识别已支持的年份行/指标行布局，保存位置和缓存；结果必须视觉核对。**PDF提取到0表或结构可疑时，立即停止该解析路径，标记待人工/OCR，不得继续向下游喂空数据。** 置信度低/无评分的词进入红色审核报告，不以高分当真值。具体能力与命令见 [references/extraction.md](references/extraction.md)。
 3. `scripts/audit_candidates.py` **重新读取原文件**，校验 SHA256、数值单元格、城市行、原表头和引用上下文；对照网络采集清单和外部来源注册表。调用方填写的 `official_verified/value_verified/scope_verified` 不会赋予信任。证据结构和人工审核规则见 [references/records.md](references/records.md)。
 4. `scripts/run_pipeline.py` 将文章/嵌入图或直接附件的采集、原数候选与证据核验连接起来；限额、未解析和缺项均明确报告，候选并非已批准数据。

@@ -1,0 +1,366 @@
+{
+  "coverage": "31 mainland provincial administrative regions, excludes Hong Kong/Macao/Taiwan",
+  "provinces": [
+    {
+      "province": "北京",
+      "code_prefix": "11",
+      "publisher": "北京市统计局",
+      "portal_url": "https://tjj.beijing.gov.cn/",
+      "catalog_urls": [
+        "https://tjj.beijing.gov.cn/tjsj_31433/tjnj_31441/"
+      ],
+      "discovery_page_limit": 2,
+      "entry_basis": "archived_official_directory_link",
+      "current_access_validation": "pending",
+      "policy": "Use literal official links and original protocol; no constructed yearly paths"
+    },
+    {
+      "province": "天津",
+      "code_prefix": "12",
+      "publisher": "天津市统计局",
+      "portal_url": "https://stats.tj.gov.cn/",
+      "catalog_urls": [],
+      "discovery_page_limit": 2,
+      "entry_basis": "official_portal_requires_catalog_discovery",
+      "current_access_validation": "pending",
+      "policy": "Use literal official links and original protocol; no constructed yearly paths"
+    },
+    {
+      "province": "河北",
+      "code_prefix": "13",
+      "publisher": "河北省统计局",
+      "portal_url": "https://tjj.hebei.gov.cn/",
+      "catalog_urls": [
+        "https://tjj.hebei.gov.cn/hbstjj/sj/sjcx/tjnj"
+      ],
+      "discovery_page_limit": 2,
+      "entry_basis": "archived_official_directory_link",
+      "current_access_validation": "pending",
+      "policy": "Use literal official links and original protocol; no constructed yearly paths"
+    },
+    {
+      "province": "山西",
+      "code_prefix": "14",
+      "publisher": "山西省统计局",
+      "portal_url": "https://tjj.shanxi.gov.cn/",
+      "catalog_urls": [
+        "http://tjj.shanxi.gov.cn/sxsj-show/yearData"
+      ],
+      "discovery_page_limit": 2,
+      "entry_basis": "archived_official_directory_link",
+      "current_access_validation": "pending",
+      "policy": "Use literal official links and original protocol; no constructed yearly paths"
+    },
+    {
+      "province": "内蒙古",
+      "code_prefix": "15",
+      "publisher": "内蒙古自治区统计局",
+      "portal_url": "https://tj.nmg.gov.cn/",
+      "catalog_urls": [],
+      "discovery_page_limit": 2,
+      "entry_basis": "official_portal_requires_catalog_discovery",
+      "current_access_validation": "pending",
+      "policy": "Use literal official links and original protocol; no constructed yearly paths"
+    },
+    {
+      "province": "辽宁",
+      "code_prefix": "21",
+      "publisher": "辽宁省统计局",
+      "portal_url": "https://tjj.ln.gov.cn/",
+      "catalog_urls": [],
+      "discovery_page_limit": 2,
+      "entry_basis": "official_portal_requires_catalog_discovery",
+      "current_access_validation": "pending",
+      "policy": "Use literal official links and original protocol; no constructed yearly paths"
+    },
+    {
+      "province": "吉林",
+      "code_prefix": "22",
+      "publisher": "吉林省统计局",
+      "portal_url": "https://tjj.jl.gov.cn/",
+      "catalog_urls": [],
+      "discovery_page_limit": 2,
+      "entry_basis": "official_portal_requires_catalog_discovery",
+      "current_access_validation": "pending",
+      "policy": "Use literal official links and original protocol; no constructed yearly paths"
+    },
+    {
+      "province": "黑龙江",
+      "code_prefix": "23",
+      "publisher": "黑龙江省统计局",
+      "portal_url": "https://tjj.hlj.gov.cn/",
+      "catalog_urls": [
+        "https://tjj.hlj.gov.cn/tjj/c106782/common_zfxxgk.shtml"
+      ],
+      "discovery_page_limit": 2,
+      "entry_basis": "archived_official_directory_link",
+      "current_access_validation": "pending",
+      "policy": "Use literal official links and original protocol; no constructed yearly paths"
+    },
+    {
+      "province": "上海",
+      "code_prefix": "31",
+      "publisher": "上海市统计局",
+      "portal_url": "https://tjj.sh.gov.cn/",
+      "catalog_urls": [],
+      "discovery_page_limit": 2,
+      "entry_basis": "official_portal_requires_catalog_discovery",
+      "current_access_validation": "pending",
+      "policy": "Use literal official links and original protocol; no constructed yearly paths"
+    },
+    {
+      "province": "江苏",
+      "code_prefix": "32",
+      "publisher": "江苏省统计局",
+      "portal_url": "https://tj.jiangsu.gov.cn/",
+      "catalog_urls": [],
+      "discovery_page_limit": 2,
+      "entry_basis": "official_portal_requires_catalog_discovery",
+      "current_access_validation": "pending",
+      "policy": "Use literal official links and original protocol; no constructed yearly paths"
+    },
+    {
+      "province": "浙江",
+      "code_prefix": "33",
+      "publisher": "浙江省统计局",
+      "portal_url": "https://tjj.zj.gov.cn/",
+      "catalog_urls": [],
+      "discovery_page_limit": 2,
+      "entry_basis": "official_portal_requires_catalog_discovery",
+      "current_access_validation": "pending",
+      "policy": "Use literal official links and original protocol; no constructed yearly paths"
+    },
+    {
+      "province": "安徽",
+      "code_prefix": "34",
+      "publisher": "安徽省统计局",
+      "portal_url": "https://tjj.ah.gov.cn/",
+      "catalog_urls": [],
+      "discovery_page_limit": 2,
+      "entry_basis": "official_portal_requires_catalog_discovery",
+      "current_access_validation": "pending",
+      "policy": "Use literal official links and original protocol; no constructed yearly paths"
+    },
+    {
+      "province": "福建",
+      "code_prefix": "35",
+      "publisher": "福建省统计局",
+      "portal_url": "https://tjj.fujian.gov.cn/",
+      "catalog_urls": [
+        "https://tjj.fujian.gov.cn/xxgk/njgb/tjnj/"
+      ],
+      "discovery_page_limit": 2,
+      "entry_basis": "archived_official_directory_link",
+      "current_access_validation": "pending",
+      "policy": "Use literal official links and original protocol; no constructed yearly paths"
+    },
+    {
+      "province": "江西",
+      "code_prefix": "36",
+      "publisher": "江西省统计局",
+      "portal_url": "https://tjj.jiangxi.gov.cn/",
+      "catalog_urls": [],
+      "discovery_page_limit": 2,
+      "entry_basis": "official_portal_requires_catalog_discovery",
+      "current_access_validation": "pending",
+      "policy": "Use literal official links and original protocol; no constructed yearly paths"
+    },
+    {
+      "province": "山东",
+      "code_prefix": "37",
+      "publisher": "山东省统计局",
+      "portal_url": "https://tjj.shandong.gov.cn/",
+      "catalog_urls": [
+        "http://tjj.shandong.gov.cn/col/col6279/index.html"
+      ],
+      "discovery_page_limit": 2,
+      "entry_basis": "user_confirmed_official_catalog",
+      "current_access_validation": "pending",
+      "policy": "Use literal official links and original protocol; no constructed yearly paths"
+    },
+    {
+      "province": "河南",
+      "code_prefix": "41",
+      "publisher": "河南省统计局",
+      "portal_url": "https://tjj.henan.gov.cn/",
+      "catalog_urls": [
+        "https://tjj.henan.gov.cn/tjfw/tjcbw/tjnj/"
+      ],
+      "discovery_page_limit": 2,
+      "entry_basis": "archived_official_directory_link",
+      "current_access_validation": "pending",
+      "policy": "Use literal official links and original protocol; no constructed yearly paths"
+    },
+    {
+      "province": "湖北",
+      "code_prefix": "42",
+      "publisher": "湖北省统计局",
+      "portal_url": "https://tjj.hubei.gov.cn/",
+      "catalog_urls": [],
+      "discovery_page_limit": 2,
+      "entry_basis": "official_portal_requires_catalog_discovery",
+      "current_access_validation": "pending",
+      "policy": "Use literal official links and original protocol; no constructed yearly paths"
+    },
+    {
+      "province": "湖南",
+      "code_prefix": "43",
+      "publisher": "湖南省统计局",
+      "portal_url": "https://tjj.hunan.gov.cn/",
+      "catalog_urls": [],
+      "discovery_page_limit": 2,
+      "entry_basis": "official_portal_requires_catalog_discovery",
+      "current_access_validation": "pending",
+      "policy": "Use literal official links and original protocol; no constructed yearly paths"
+    },
+    {
+      "province": "广东",
+      "code_prefix": "44",
+      "publisher": "广东省统计局",
+      "portal_url": "https://stats.gd.gov.cn/",
+      "catalog_urls": [],
+      "discovery_page_limit": 2,
+      "entry_basis": "official_portal_requires_catalog_discovery",
+      "current_access_validation": "pending",
+      "policy": "Use literal official links and original protocol; no constructed yearly paths"
+    },
+    {
+      "province": "广西",
+      "code_prefix": "45",
+      "publisher": "广西壮族自治区统计局",
+      "portal_url": "https://tjj.gxzf.gov.cn/",
+      "catalog_urls": [],
+      "discovery_page_limit": 2,
+      "entry_basis": "official_portal_requires_catalog_discovery",
+      "current_access_validation": "pending",
+      "policy": "Use literal official links and original protocol; no constructed yearly paths"
+    },
+    {
+      "province": "海南",
+      "code_prefix": "46",
+      "publisher": "海南省统计局",
+      "portal_url": "https://stats.hainan.gov.cn/",
+      "catalog_urls": [],
+      "discovery_page_limit": 2,
+      "entry_basis": "official_portal_requires_catalog_discovery",
+      "current_access_validation": "pending",
+      "policy": "Use literal official links and original protocol; no constructed yearly paths"
+    },
+    {
+      "province": "重庆",
+      "code_prefix": "50",
+      "publisher": "重庆市统计局",
+      "portal_url": "https://tjj.cq.gov.cn/",
+      "catalog_urls": [],
+      "discovery_page_limit": 2,
+      "entry_basis": "official_portal_requires_catalog_discovery",
+      "current_access_validation": "pending",
+      "policy": "Use literal official links and original protocol; no constructed yearly paths"
+    },
+    {
+      "province": "四川",
+      "code_prefix": "51",
+      "publisher": "四川省统计局",
+      "portal_url": "https://tjj.sc.gov.cn/",
+      "catalog_urls": [
+        "https://tjj.sc.gov.cn/scstjj/c112132/pic_list.shtml"
+      ],
+      "discovery_page_limit": 2,
+      "entry_basis": "archived_official_directory_link",
+      "current_access_validation": "pending",
+      "policy": "Use literal official links and original protocol; no constructed yearly paths"
+    },
+    {
+      "province": "贵州",
+      "code_prefix": "52",
+      "publisher": "贵州省统计局",
+      "portal_url": "https://stjj.guizhou.gov.cn/",
+      "catalog_urls": [],
+      "discovery_page_limit": 2,
+      "entry_basis": "official_portal_requires_catalog_discovery",
+      "current_access_validation": "pending",
+      "policy": "Use literal official links and original protocol; no constructed yearly paths"
+    },
+    {
+      "province": "云南",
+      "code_prefix": "53",
+      "publisher": "云南省统计局",
+      "portal_url": "https://stats.yn.gov.cn/",
+      "catalog_urls": [],
+      "discovery_page_limit": 2,
+      "entry_basis": "official_portal_requires_catalog_discovery",
+      "current_access_validation": "pending",
+      "policy": "Use literal official links and original protocol; no constructed yearly paths"
+    },
+    {
+      "province": "西藏",
+      "code_prefix": "54",
+      "publisher": "西藏自治区统计局",
+      "portal_url": "https://tjj.xizang.gov.cn/",
+      "catalog_urls": [],
+      "discovery_page_limit": 2,
+      "entry_basis": "official_portal_requires_catalog_discovery",
+      "current_access_validation": "pending",
+      "policy": "Use literal official links and original protocol; no constructed yearly paths"
+    },
+    {
+      "province": "陕西",
+      "code_prefix": "61",
+      "publisher": "陕西省统计局",
+      "portal_url": "https://tjj.shaanxi.gov.cn/",
+      "catalog_urls": [
+        "https://tjj.shaanxi.gov.cn/tjsj/ndsj/tjnj/"
+      ],
+      "discovery_page_limit": 2,
+      "entry_basis": "archived_official_directory_link",
+      "current_access_validation": "pending",
+      "policy": "Use literal official links and original protocol; no constructed yearly paths"
+    },
+    {
+      "province": "甘肃",
+      "code_prefix": "62",
+      "publisher": "甘肃省统计局",
+      "portal_url": "https://tjj.gansu.gov.cn/",
+      "catalog_urls": [],
+      "discovery_page_limit": 2,
+      "entry_basis": "official_portal_requires_catalog_discovery",
+      "current_access_validation": "pending",
+      "policy": "Use literal official links and original protocol; no constructed yearly paths"
+    },
+    {
+      "province": "青海",
+      "code_prefix": "63",
+      "publisher": "青海省统计局",
+      "portal_url": "https://tjj.qinghai.gov.cn/",
+      "catalog_urls": [],
+      "discovery_page_limit": 2,
+      "entry_basis": "official_portal_requires_catalog_discovery",
+      "current_access_validation": "pending",
+      "policy": "Use literal official links and original protocol; no constructed yearly paths"
+    },
+    {
+      "province": "宁夏",
+      "code_prefix": "64",
+      "publisher": "宁夏回族自治区统计局",
+      "portal_url": "https://tj.nx.gov.cn/",
+      "catalog_urls": [
+        "https://data.tj.nx.gov.cn/publish.htm?cn=G01"
+      ],
+      "discovery_page_limit": 2,
+      "entry_basis": "archived_official_directory_link",
+      "current_access_validation": "pending",
+      "policy": "Use literal official links and original protocol; no constructed yearly paths"
+    },
+    {
+      "province": "新疆",
+      "code_prefix": "65",
+      "publisher": "新疆维吾尔自治区统计局",
+      "portal_url": "https://tjj.xinjiang.gov.cn/",
+      "catalog_urls": [],
+      "discovery_page_limit": 2,
+      "entry_basis": "official_portal_requires_catalog_discovery",
+      "current_access_validation": "pending",
+      "policy": "Use literal official links and original protocol; no constructed yearly paths"
+    }
+  ]
+}

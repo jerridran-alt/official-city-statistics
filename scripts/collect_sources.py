@@ -27,7 +27,7 @@ def collect(seed, registry, output, depth=1, limit=10, engine='http', network_st
             results.append({'url': url, 'depth': level, 'status': 'ok', 'sha256': record['sha256'], 'file': record['file'], 'mode': record['mode'], 'cache_hit': record.get('cache_hit', False)})
             if level < depth:
                 for link in record['links']:
-                    if (link['is_statistics_hint'] or link['is_attachment']) and urlparse(link['url']).hostname in hosts:
+                    if (link['is_statistics_hint'] or link['is_attachment'] or link.get('is_catalog_frame')) and urlparse(link['url']).hostname in hosts:
                         queue.append((link['url'], level + 1))
         except Exception as exc:
             results.append({'url':url,'depth':level,'status':'failed','failure':classify(exc)})
@@ -41,10 +41,11 @@ def main():
     p.add_argument('--depth', type=int, choices=(0, 1, 2), default=1)
     p.add_argument('--limit', type=int, default=10)
     p.add_argument('--engine', choices=('http', 'browser'), default='http')
+    p.add_argument('--network-state')
     a = p.parse_args()
     if not 1 <= a.limit <= 100:
         p.error('limit must be between 1 and 100')
-    result = collect(a.url, a.registry, a.output, a.depth, a.limit, a.engine)
+    result = collect(a.url, a.registry, a.output, a.depth, a.limit, a.engine, a.network_state)
     save(Path(a.output) / 'collection_report.json', result)
     print(json.dumps({'sources': len(result['sources']), 'failed': sum(r['status'] == 'failed' for r in result['sources']), 'queued_not_visited': result['queued_not_visited']}))
     return 1 if any(r['status'] == 'failed' for r in result['sources']) else 0

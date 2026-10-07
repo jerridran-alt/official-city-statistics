@@ -3,6 +3,8 @@ import argparse
 import asyncio
 import hashlib
 import json
+import re
+import codecs
 import time
 import urllib.error
 import urllib.request
@@ -44,8 +46,15 @@ class Catalog(HTMLParser):
         self.url, self.current, self.links = url, None, []
 
     def handle_starttag(self, tag, attrs):
+        attrs = dict(attrs)
+        if tag in ('frame', 'iframe') and attrs.get('src'):
+            self.links.append({'url': urljoin(self.url, attrs['src'].replace('\\', '/')), 'text': attrs.get('title') or attrs.get('name') or 'frame', 'discovery': 'frame_src', 'is_catalog_frame': bool(re.search(r'left|contents|mulu|menu|index', attrs.get('src','')+' '+attrs.get('name',''), re.I))})
         if tag == 'a':
-            self.current = {'url': urljoin(self.url, dict(attrs).get('href', '')), 'text': ''}
+            href = attrs.get('href', '')
+            if not href or href.lower().startswith('javascript:'):
+                literal = re.search(r'(?:window\.)?open\s*\(\s*([\x27\"])(.*?)\1', attrs.get('onclick',''), re.I)
+                href = literal.group(2) if literal else ''
+            self.current = {'url': urljoin(self.url, href.replace('\\', '/')), 'text': '', 'title': attrs.get('title','')}
 
     def handle_data(self, data):
         if self.current is not None:
@@ -54,7 +63,7 @@ class Catalog(HTMLParser):
     def handle_endtag(self, tag):
         if tag == 'a' and self.current is not None:
             a = self.current
-            a['text'] = ' '.join(a['text'].split())
+            a['text'] = ' '.join(a['text'].split()) or a.pop('title','')
             if urlparse(a['url']).scheme in ('http', 'https'):
                 self.links.append(a)
             self.current = None
@@ -62,13 +71,30 @@ class Catalog(HTMLParser):
 
 def inspect_html(body, url, charset='utf-8'):
     parser = Catalog(url)
-    parser.feed(body.decode(charset, errors='replace'))
+    text=body.decode(charset, errors='replace')
+    parser.feed(text)
+    # JPage-style official catalogs store literal link HTML inside CDATA.
+    # Read those literal fragments; do not execute JavaScript or construct URLs.
+    for match in re.finditer(r'<!\[CDATA\[(.*?)\]\]>', text, re.S):
+        fragment=Catalog(url);fragment.feed(match.group(1))
+        for link in fragment.links:
+            link.update(discovery='embedded_cdata',source_fragment_span=[match.start(1),match.end(1)])
+            parser.links.append(link)
     unique = {(a['url'], a['text']): a for a in parser.links}
     links = list(unique.values())
     for a in links:
         a['is_attachment'] = urlparse(a['url']).path.lower().endswith(('.pdf', '.xls', '.xlsx', '.zip', '.doc', '.docx'))
         a['is_statistics_hint'] = any(x in a['text'] for x in ('统计', '年鉴', '公报'))
     return links
+
+
+def html_encoding(body, header=None, explicit=None):
+    if explicit:return explicit
+    if body.startswith(b'\xef\xbb\xbf'):return 'utf-8-sig'
+    match=re.search(rb'charset\s*=\s*[\x27\"]?\s*([a-zA-Z0-9_-]+)',body[:8192],re.I)
+    enc=header or (match.group(1).decode('ascii') if match else 'utf-8')
+    codecs.lookup(enc)
+    return 'gb18030' if enc.lower() in ('gb2312','gbk') else enc
 
 
 async def browser_html(url, hosts, timeout, selector):
@@ -116,12 +142,16 @@ def _fetch(args):
         data = (output / record['file']).read_bytes()
         if hashlib.sha256(data).hexdigest() != record['sha256']:
             raise ValueError('Cached file hash mismatch; preserve evidence and refresh')
+        if 'html' in record.get('content_type','').lower() and record.get('catalog_parser_version')!='2.0':
+            enc=html_encoding(data,explicit=record.get('encoding'))
+            record.update(encoding=enc,links=inspect_html(data,record['final_url'],enc),catalog_parser_version='2.0',links_reparsed_from_original=True)
+            write_json(manifest,record)
         return dict(record, cache_hit=True)
     if args.html:
         body = Path(args.html).read_bytes()
         if len(body) > args.max_bytes:
             raise ValueError('Offline input exceeds max-bytes')
-        final_url, ctype, charset = args.url, 'text/html', args.encoding or 'utf-8'
+        final_url, ctype, charset = args.url, 'text/html', html_encoding(body,explicit=args.encoding)
         mode = 'offline_html'
     elif engine == 'browser':
         body, final_url = asyncio.run(browser_html(args.url, hosts, args.timeout, getattr(args, 'wait_selector', None)))
@@ -138,7 +168,7 @@ def _fetch(args):
                     check_url(final_url, hosts)
                     body = response.read(args.max_bytes + 1)
                     ctype = response.headers.get('Content-Type', '')
-                    charset = args.encoding or response.headers.get_content_charset() or 'utf-8'
+                    charset = html_encoding(body,response.headers.get_content_charset(),args.encoding) if 'html' in ctype.lower() else args.encoding or 'utf-8'
                 if len(body) > args.max_bytes:
                     raise ValueError('Response exceeds max-bytes; increase limit deliberately')
                 break
@@ -154,7 +184,8 @@ def _fetch(args):
     blob.write_bytes(body)
     links = inspect_html(body, final_url, charset) if 'html' in ctype.lower() else []
     owner = check_url(final_url, hosts)
-    record = {'url': args.url, 'final_url': final_url, 'publisher': owner['publisher'], 'retrieved_at': datetime.now(timezone.utc).isoformat(), 'mode': mode, 'engine': engine, 'rendered_dom': engine == 'browser', 'content_type': ctype, 'bytes': len(body), 'sha256': digest, 'file': blob.name, 'links': links, 'statistical_values_verified': False}
+    record = {'url': args.url, 'final_url': final_url, 'publisher': owner['publisher'], 'retrieved_at': datetime.now(timezone.utc).isoformat(), 'mode': mode, 'engine': engine, 'rendered_dom': engine == 'browser', 'content_type': ctype, 'encoding': charset, 'bytes': len(body), 'sha256': digest, 'file': blob.name, 'links': links, 'statistical_values_verified': False}
+    record['catalog_parser_version']='2.0'
     # Offline inspections must not replace a previously retrieved network manifest.
     target = output / (key + '.offline.json') if args.html else manifest
     write_json(target, record)
@@ -169,12 +200,13 @@ def fetch(args):
     if args.html or ((output/(key+'.json')).exists() and not args.refresh):return _fetch(args)
     from network_health import host_slot,finish,failure
     from types import SimpleNamespace
-    host=urlparse(args.url).hostname
+    parsed=urlparse(args.url);host=parsed.hostname
+    origin=f'{parsed.scheme}://{host}:{parsed.port or (443 if parsed.scheme=="https" else 80)}'
     # Validate registry before touching host state or the network.
     registry=json.loads(Path(args.registry).read_text(encoding='utf-8-sig'))
     hosts={r['host'].lower():r for r in registry['hosts'] if r.get('verified') is True and r.get('publisher') and r.get('evidence_url')};check_url(args.url,hosts)
     directory=getattr(args,'network_state',None) or output/'.network_health'
-    with host_slot(directory,host,wait=min(30,args.timeout+2)) as (state,statefile):
+    with host_slot(directory,origin,wait=min(30,args.timeout+2)) as (state,statefile):
         try:
             local=SimpleNamespace(**vars(args));local.retries=0
             result=_fetch(local)
