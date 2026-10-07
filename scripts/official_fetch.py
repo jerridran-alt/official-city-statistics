@@ -5,6 +5,7 @@ import hashlib
 import json
 import re
 import codecs
+from html import unescape
 import time
 import urllib.error
 import urllib.request
@@ -97,6 +98,11 @@ def html_encoding(body, header=None, explicit=None):
     return 'gb18030' if enc.lower() in ('gb2312','gbk') else enc
 
 
+def document_title(body, encoding):
+    match=re.search(r'<title\b[^>]*>(.*?)</title>',body.decode(encoding,errors='replace'),re.I|re.S)
+    return unescape(re.sub(r'<[^>]+>','',match.group(1))).strip() if match else ''
+
+
 async def browser_html(url, hosts, timeout, selector):
     try:
         from playwright.async_api import async_playwright
@@ -142,9 +148,9 @@ def _fetch(args):
         data = (output / record['file']).read_bytes()
         if hashlib.sha256(data).hexdigest() != record['sha256']:
             raise ValueError('Cached file hash mismatch; preserve evidence and refresh')
-        if 'html' in record.get('content_type','').lower() and record.get('catalog_parser_version')!='2.0':
+        if 'html' in record.get('content_type','').lower() and record.get('catalog_parser_version')!='2.1':
             enc=html_encoding(data,explicit=record.get('encoding'))
-            record.update(encoding=enc,links=inspect_html(data,record['final_url'],enc),catalog_parser_version='2.0',links_reparsed_from_original=True)
+            record.update(encoding=enc,links=inspect_html(data,record['final_url'],enc),document_title=document_title(data,enc),catalog_parser_version='2.1',links_reparsed_from_original=True)
             write_json(manifest,record)
         return dict(record, cache_hit=True)
     if args.html:
@@ -185,7 +191,8 @@ def _fetch(args):
     links = inspect_html(body, final_url, charset) if 'html' in ctype.lower() else []
     owner = check_url(final_url, hosts)
     record = {'url': args.url, 'final_url': final_url, 'publisher': owner['publisher'], 'retrieved_at': datetime.now(timezone.utc).isoformat(), 'mode': mode, 'engine': engine, 'rendered_dom': engine == 'browser', 'content_type': ctype, 'encoding': charset, 'bytes': len(body), 'sha256': digest, 'file': blob.name, 'links': links, 'statistical_values_verified': False}
-    record['catalog_parser_version']='2.0'
+    record['catalog_parser_version']='2.1'
+    if 'html' in ctype.lower():record['document_title']=document_title(body,charset)
     # Offline inspections must not replace a previously retrieved network manifest.
     target = output / (key + '.offline.json') if args.html else manifest
     write_json(target, record)

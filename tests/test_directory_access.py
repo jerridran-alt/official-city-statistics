@@ -8,6 +8,26 @@ from province_access import discover
 from network_health import HostDeferred
 
 class DirectoryAccessTests(unittest.TestCase):
+ def test_year_search_and_self_navigation_are_not_yearbook_entries(self):
+  with tempfile.TemporaryDirectory() as d:
+   reg=Path(d)/'registry';reg.write_text(json.dumps({'hosts':[{'host':'gov.test','verified':True}]}))
+   record={'final_url':'https://gov.test/catalog','sha256':'original','document_title':'统计数据','links':[{'url':'https://gov.test/search.htm?s=2014','text':'2014'},{'url':'https://gov.test/catalog','text':'2021年统计年鉴'}]}
+   with patch('province_access.fetch',return_value=record):r=discover({'province':'测试','portal_url':'https://gov.test/catalog'},reg,Path(d)/'capture')
+   self.assertEqual(r['yearbook_entries'],[]);self.assertEqual(len(r['pending_year_links']),1)
+ def test_primary_user_entry_precedes_retained_fallback(self):
+  with tempfile.TemporaryDirectory() as d:
+   reg=Path(d)/'registry';reg.write_text(json.dumps({'hosts':[{'host':'gov.test','verified':True}]}))
+   record={'final_url':'http://gov.test/old/catalog','sha256':'original','links':[{'url':'http://gov.test/book','text':'统计年鉴2025'}]}
+   with patch('province_access.fetch',side_effect=[TimeoutError('primary timed out'),record]) as f:
+    r=discover({'province':'测试','portal_url':'http://gov.test','catalog_urls':['http://gov.test/new/catalog'],'fallback_catalog_urls':['http://gov.test/old/catalog'],'discovery_page_limit':2},reg,Path(d)/'capture')
+   self.assertEqual([c.args[0].url for c in f.call_args_list],['http://gov.test/new/catalog','http://gov.test/old/catalog']);self.assertEqual(r['yearbook_entries'][0]['edition'],2025)
+ def test_direct_book_and_year_only_labels_use_original_metadata(self):
+  with tempfile.TemporaryDirectory() as d:
+   reg=Path(d)/'registry';reg.write_text(json.dumps({'hosts':[{'host':'gov.test','verified':True}]}))
+   record={'final_url':'https://gov.test/book','sha256':'original','document_title':'测试统计年鉴2025','links':[{'url':'https://gov.test/2024','text':'2024'}]}
+   with patch('province_access.fetch',return_value=record):
+    r=discover({'province':'测试','portal_url':'https://gov.test','catalog_urls':['https://gov.test/book'],'entry_kind':'direct_yearbook'},reg,Path(d)/'capture')
+   self.assertEqual([a['edition'] for a in r['yearbook_entries']],[2025,2024])
  def test_cdata_catalog_preserves_literal_protocol_and_special_path(self):
   data='<meta charset="utf-8"><script><record><![CDATA[<a href="http://gov.test/tjnj/nj2015/new/indexch_new.htm" title="统计年鉴2015">统计年鉴2015</a>]]></record></script>'.encode()
   links=official_fetch.inspect_html(data,'http://gov.test/col/index.html')

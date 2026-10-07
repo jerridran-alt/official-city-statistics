@@ -9,8 +9,10 @@ from failure_types import classify
 def discover(profile,registry,output,network_state=None,follow_years=0,timeout=10):
     seeds=profile.get('catalog_urls') or [profile['portal_url']]
     hosts={r['host'] for r in json.loads(Path(registry).read_text(encoding='utf8'))['hosts'] if r.get('verified')}
-    results=[];years={};queue=list(dict.fromkeys(seeds));seen=set();limit=profile.get('discovery_page_limit',4)
+    results=[];years={};pending=[];queue=list(dict.fromkeys(seeds));fallback=list(profile.get('fallback_catalog_urls',[]));seen=set();limit=profile.get('discovery_page_limit',4)
     for _ in range(limit):
+        if not queue and not years:
+            queue=[u for u in fallback if u not in seen];fallback=[]
         if not queue:break
         url=queue.pop(0)
         if url in seen:continue
@@ -18,12 +20,20 @@ def discover(profile,registry,output,network_state=None,follow_years=0,timeout=1
         try:
             r=fetch(SimpleNamespace(url=url,registry=registry,output=output,network_state=network_state,engine='http',html=None,refresh=False,encoding=None,retries=0,timeout=timeout,max_bytes=20000000,wait_selector=None))
             results.append({'url':url,'final_url':r['final_url'],'status':'ok','sha256':r['sha256'],'cache_hit':r.get('cache_hit',False),'encoding':r.get('encoding')})
+            title=r.get('document_title','');edition=re.search(r'(?:19|20)\d{2}',title);book_context='年鉴' in title or 'Yearbook' in title
+            if profile.get('entry_kind')=='direct_yearbook' and url in seeds and edition and ('年鉴' in title or 'Yearbook' in title):
+                years[(int(edition.group()),r['final_url'])]={'edition':int(edition.group()),'url':r['final_url'],'title':title,'discovered_from':r['final_url'],'source_sha256':r['sha256'],'discovery':'original_document_title'}
             for a in r['links']:
                 if urlparse(a['url']).hostname not in hosts:continue
+                if a['url'].split('#')[0]==r['final_url'].split('#')[0]:continue
                 title=a['text'];match=re.search(r'(?:19|20)\d{2}',title)
-                if match and ('年鉴' in title or 'Yearbook' in title):
+                year_only=bool(re.fullmatch(r'\s*(?:19|20)\d{2}\s*(?:年|版)?\s*',title))
+                if year_only and (not book_context or 'search' in urlparse(a['url']).path.lower()):
+                    pending.append({**a,'discovered_from':r['final_url'],'reason':'单独年份或搜索筛选链接无明确年鉴书目上下文，待核'});continue
+                if match and ('年鉴' in title or 'Yearbook' in title or (book_context and year_only)):
                     years[(int(match.group()),a['url'])]={'edition':int(match.group()),'url':a['url'],'title':title,'discovered_from':r['final_url'],'source_sha256':r['sha256'],'discovery':a.get('discovery','anchor_href')}
-                elif '年鉴' in title or a.get('is_catalog_frame'):queue.append(a['url'])
+                elif '年鉴' in title or a.get('is_catalog_frame'):
+                    queue.append(a['url'])
         except Exception as e:results.append({'url':url,'status':'deferred' if getattr(e,'code',None)=='HOST_DEFERRED' else 'failed','failure':classify(e)})
     entries=sorted(years.values(),key=lambda x:x['edition'],reverse=True);verified=[]
     for entry in entries[:follow_years]:
@@ -31,7 +41,7 @@ def discover(profile,registry,output,network_state=None,follow_years=0,timeout=1
             r=fetch(SimpleNamespace(url=entry['url'],registry=registry,output=output,network_state=network_state,engine='http',html=None,refresh=False,encoding=None,retries=0,timeout=timeout,max_bytes=20000000,wait_selector=None))
             verified.append({**entry,'status':'ok','final_url':r['final_url'],'source_sha256':r['sha256'],'frames':[a['url'] for a in r['links'] if a.get('is_catalog_frame')]})
         except Exception as e:verified.append({**entry,'status':'failed','failure':classify(e)})
-    report={'province':profile['province'],'catalog_pages':results,'yearbook_entries':entries,'visited_yearbooks':verified,'unvisited_catalog_urls':queue,'scope':'Configured official catalog links only; discovered entries are not all claimed reachable','checked_unix':time.time()}
+    report={'province':profile['province'],'catalog_pages':results,'yearbook_entries':entries,'pending_year_links':pending,'visited_yearbooks':verified,'unvisited_catalog_urls':queue,'scope':'Configured official catalog links only; discovered entries are not all claimed reachable','checked_unix':time.time()}
     Path(output).mkdir(parents=True,exist_ok=True);(Path(output)/'province_access_report.json').write_text(json.dumps(report,ensure_ascii=False,indent=2),encoding='utf8');return report
 
 def main():
