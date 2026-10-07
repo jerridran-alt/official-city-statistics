@@ -117,23 +117,45 @@ def verify(record, config, root, registry, parsed_cache):
     return {'id': record.get('id') if isinstance(record, dict) else None, 'machine_checks_passed': not errors, 'errors': errors, 'origin': origin, 'semantic_review_required': True, 'ignored_self_declarations': [k for k in ('official_verified', 'value_verified', 'scope_verified') if isinstance(record, dict) and k in record]}
 
 
-def audit(records, config, evidence_root, registry):
+def audit(records, config, evidence_root, registry, review_cache=None, semantic_reviews=None):
     if not records:return {'status':'empty_input','records':0,'passed':0,'failed':1,'machine_checks_passed':False,'source_files_read':0,'results':[],'note':'0 条记录，来源未解析，非数据齐全'}
     cache = {}
-    results = [verify(r, config, evidence_root, registry, cache) for r in records]
+    results=[];hits=0
+    from review_cache import lookup,store
+    from collection_efficiency import digest
+    version=digest({p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in Path(__file__).parent.glob('*.py')})
+    reviews={r.get('id',r.get('record_id')):r for r in (semantic_reviews or [])}
+    for r in records:
+        review=reviews.get(r.get('id'));result=None
+        # Every artifact influencing verification participates in cache identity.
+        dependencies={}
+        try:
+            e=r.get('evidence',{});source=inside(evidence_root,e['file'])
+            for name in ('file','capture_manifest','ocr_artifact','matrix_plan','header_file'):
+                if e.get(name):dependencies[name]=hashlib.sha256(inside(evidence_root,e[name]).read_bytes()).hexdigest()
+            bound_version=digest({'code':version,'artifacts':dependencies})
+            if review_cache:result=lookup(review_cache,r,config,registry,review,bound_version,source)
+        except (OSError,KeyError,ValueError,TypeError):source=None
+        if result is None:
+            result=verify(r,config,evidence_root,registry,cache)
+            if review_cache and source is not None:store(review_cache,r,config,registry,review,bound_version,source,result)
+        else:hits+=1
+        results.append(result)
     ids = [r['id'] for r in results]
     for result in results:
         if result['id'] is not None and ids.count(result['id']) > 1:
             result['errors'].append('Duplicate record identity in batch')
             result['machine_checks_passed'] = False
     failed = sum(not r['machine_checks_passed'] for r in results)
-    return {'records': len(records), 'passed': len(records) - failed, 'failed': failed, 'machine_checks_passed': failed == 0, 'source_files_read': len(cache), 'results': results, 'note': 'Original-cell/context consistency checks, not a certification of publisher identity or statistical meaning. Authority registry and semantic review remain explicit external evidence.'}
+    return {'records': len(records), 'passed': len(records) - failed, 'failed': failed, 'machine_checks_passed': failed == 0, 'source_files_read': len(cache), 'audit_cache_hits':hits, 'results': results, 'note': 'Original-cell/context consistency checks, not a certification of publisher identity or statistical meaning. Authority registry and semantic review remain explicit external evidence.'}
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     for name in ('records', 'config', 'evidence-root', 'registry', 'output'):
         p.add_argument('--' + name, required=True)
+    p.add_argument('--review-cache', help='Exact evidence-bound prior audit cache')
+    p.add_argument('--semantic-reviews', help='Existing external approvals; cache cannot create approvals')
     a = p.parse_args()
     extraction_report=Path(a.records+'.report.json')
     if extraction_report.exists():
@@ -141,7 +163,7 @@ def main():
         if state in ('unparsed','empty_or_error','partial_pending'):
             report={'status':'upstream_failed','machine_checks_passed':False,'reason':'上游提取未成功，拒绝继续核验空数据或旧输出','upstream_report':str(extraction_report)}
             save(a.output,report);print(json.dumps(report,ensure_ascii=False));return 1
-    report = audit(json.loads(Path(a.records).read_text(encoding='utf-8-sig')), json.loads(Path(a.config).read_text(encoding='utf-8-sig')), a.evidence_root, json.loads(Path(a.registry).read_text(encoding='utf-8-sig')))
+    report = audit(json.loads(Path(a.records).read_text(encoding='utf-8-sig')), json.loads(Path(a.config).read_text(encoding='utf-8-sig')), a.evidence_root, json.loads(Path(a.registry).read_text(encoding='utf-8-sig')),a.review_cache,json.loads(Path(a.semantic_reviews).read_text(encoding='utf-8-sig')) if a.semantic_reviews else None)
     save(a.output, report)
     print(json.dumps({k: report[k] for k in ('records', 'passed', 'failed', 'machine_checks_passed', 'source_files_read')}))
     return 0 if report['machine_checks_passed'] else 1

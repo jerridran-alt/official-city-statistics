@@ -101,7 +101,7 @@ async def browser_html(url, hosts, timeout, selector):
             await browser.close()
 
 
-def fetch(args):
+def _fetch(args):
     registry = json.loads(Path(args.registry).read_text(encoding='utf-8-sig'))
     hosts = {r['host'].lower(): r for r in registry['hosts'] if r.get('verified') is True and r.get('publisher') and r.get('evidence_url')}
     owner = check_url(args.url, hosts)
@@ -142,7 +142,9 @@ def fetch(args):
                 if len(body) > args.max_bytes:
                     raise ValueError('Response exceeds max-bytes; increase limit deliberately')
                 break
-            except (urllib.error.URLError, TimeoutError):
+            except (urllib.error.URLError, TimeoutError) as exc:
+                from network_health import failure
+                if not failure(exc)['retryable']:raise
                 if attempt == args.retries:
                     raise
                 time.sleep(1)
@@ -159,6 +161,31 @@ def fetch(args):
     return record
 
 
+
+def fetch(args):
+    # Successful exact-byte cache is usable even while the host is cooling down.
+    engine=getattr(args,'engine','http');output=Path(args.output)
+    key=hashlib.sha256((args.url+'\0'+engine).encode()).hexdigest()[:24]
+    if args.html or ((output/(key+'.json')).exists() and not args.refresh):return _fetch(args)
+    from network_health import host_slot,finish,failure
+    from types import SimpleNamespace
+    host=urlparse(args.url).hostname
+    # Validate registry before touching host state or the network.
+    registry=json.loads(Path(args.registry).read_text(encoding='utf-8-sig'))
+    hosts={r['host'].lower():r for r in registry['hosts'] if r.get('verified') is True and r.get('publisher') and r.get('evidence_url')};check_url(args.url,hosts)
+    directory=getattr(args,'network_state',None) or output/'.network_health'
+    with host_slot(directory,host,wait=min(30,args.timeout+2)) as (state,statefile):
+        try:
+            local=SimpleNamespace(**vars(args));local.retries=0
+            result=_fetch(local)
+        except Exception as exc:
+            finish(state,statefile,exc)
+            output.mkdir(parents=True,exist_ok=True)
+            write_json(output/(key+'.failure.json'),{'url':args.url,'failure':failure(exc),'error':str(exc),'network_route':'existing configured route; unchanged','outbound_region':'unknown'})
+            raise
+        finish(state,statefile);return result
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__)
     for key in ('url', 'registry', 'output'):
@@ -168,8 +195,9 @@ def main():
     p.add_argument('--engine', choices=('http', 'browser'), default='http')
     p.add_argument('--wait-selector', help='Browser mode: wait for a specific table/content selector')
     p.add_argument('--refresh', action='store_true')
+    p.add_argument('--network-state', help='Shared host health directory for all batches in a project')
     p.add_argument('--timeout', type=float, default=25)
-    p.add_argument('--retries', type=int, choices=(0, 1), default=1)
+    p.add_argument('--retries', type=int, choices=(0, 1), default=0)
     p.add_argument('--max-bytes', type=int, default=100 * 1024 * 1024)
     args = p.parse_args()
     if args.timeout <= 0 or args.max_bytes <= 0:

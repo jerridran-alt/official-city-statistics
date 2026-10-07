@@ -10,7 +10,7 @@ from stats_core import save
 from failure_types import classify
 
 
-def collect(seed, registry, output, depth=1, limit=10, engine='http'):
+def collect(seed, registry, output, depth=1, limit=10, engine='http', network_state=None):
     hosts = {r['host'] for r in json.loads(Path(registry).read_text(encoding='utf-8-sig'))['hosts'] if r.get('verified') is True}
     queue, seen, results = deque([(seed, 0)]), set(), []
     while queue and len(results) < limit:
@@ -19,7 +19,7 @@ def collect(seed, registry, output, depth=1, limit=10, engine='http'):
             continue
         seen.add(url)
         try:
-            args = SimpleNamespace(url=url, registry=registry, output=output, html=None, refresh=False, encoding=None, retries=0, timeout=25, max_bytes=100 * 1024 * 1024, engine=engine, wait_selector=None)
+            args = SimpleNamespace(url=url, registry=registry, output=output, html=None, refresh=False, encoding=None, retries=0, timeout=25, max_bytes=100 * 1024 * 1024, engine=engine, wait_selector=None,network_state=network_state)
             # Attachments are retrieved over HTTP rather than rendered as browser pages.
             if urlparse(url).path.lower().endswith(('.pdf', '.xls', '.xlsx', '.zip')):
                 args.engine = 'http'

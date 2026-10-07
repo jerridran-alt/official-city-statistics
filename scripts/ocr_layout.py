@@ -32,12 +32,14 @@ def render_pages(source,scale,max_pages=5,page_numbers=None):
         try:import pypdfium2 as pdfium
         except ImportError as exc:raise RuntimeError('Scanned PDF rendering requires pypdfium2; run bootstrap.py --profile basic') from exc
         doc=pdfium.PdfDocument(source)
-        indices=[n-1 for n in page_numbers] if page_numbers else list(range(min(len(doc),max_pages)))
-        if any(i<0 or i>=len(doc) for i in indices):raise ValueError('Selected PDF page outside original document')
-        for i in indices:
-            bitmap=doc[i].render(scale=scale);image=bitmap.to_pil().convert('RGB')
-            yield i+1,image
-        doc.close()
+        try:
+            indices=[n-1 for n in page_numbers] if page_numbers else list(range(min(len(doc),max_pages)))
+            if any(i<0 or i>=len(doc) for i in indices):raise ValueError('Selected PDF page outside original document')
+            for i in indices:
+                bitmap=doc[i].render(scale=scale);image=bitmap.to_pil().convert('RGB')
+                yield i+1,image
+        finally:
+            doc.close()
     else:
         with Image.open(source) as im:
             yield 1,im.convert('RGB').resize((round(im.width*scale),round(im.height*scale)))
@@ -49,7 +51,7 @@ def run_ocr(source,cache_dir,engine='auto',scale=3.0,language='zh-Hans-CN',tile_
         from doctor import diagnose
         tile_size=min(tile_size,diagnose()['windows_ocr'].get('max_dimension',tile_size))
     if page_numbers and (len(page_numbers)>max_pages or len(set(page_numbers))!=len(page_numbers) or any(type(n)!=int or n<1 for n in page_numbers)):raise ValueError('PDF page selection must be unique positive page numbers within max-pages limit')
-    profile={'engine':engine,'scale':scale,'language':language,'tile_size':tile_size,'version':'1.2','min_confidence':min_confidence,'max_pages':max_pages,'page_numbers':page_numbers}
+    profile={'engine':engine,'scale':scale,'language':language,'tile_size':tile_size,'version':'1.3','rapidocr_threads':{'intra_op':2,'inter_op':1} if engine=='rapidocr' else None,'min_confidence':min_confidence,'max_pages':max_pages,'page_numbers':page_numbers}
     if engine=='windows':profile['backend_script_sha256']=hashlib.sha256(Path(__file__).with_name('windows_ocr.ps1').read_bytes()).hexdigest()
     key=hashlib.sha256((digest+json.dumps(profile,sort_keys=True)).encode()).hexdigest()
     cache=(Path(cache_dir)/key).resolve();cache.mkdir(parents=True,exist_ok=True);result_file=cache/'layout.json';checksum=cache/'layout.sha256'
@@ -79,7 +81,7 @@ def run_ocr(source,cache_dir,engine='auto',scale=3.0,language='zh-Hans-CN',tile_
         if run.returncode:raise RuntimeError('Windows OCR failed: '+run.stdout+run.stderr)
     elif engine=='rapidocr':
         from rapidocr import RapidOCR
-        model=RapidOCR()
+        model=RapidOCR(params={'EngineConfig.onnxruntime.intra_op_num_threads':2,'EngineConfig.onnxruntime.inter_op_num_threads':1})
         for job in jobs:
             result=model(job['path']);words=[]
             for box,text,score in zip(result.boxes if result.boxes is not None else [],result.txts if result.txts is not None else [],result.scores if result.scores is not None else []):
