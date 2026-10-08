@@ -6,7 +6,8 @@ def digest(value):return hashlib.sha256(json.dumps(value,ensure_ascii=False,sort
 def key(r):return (r.get('code',r.get('research_id',r.get('city'))),r['year'],r['indicator'],r.get('geographic_scope','full_city'))
 def fallback_keys(missing,level,checks):
     """Unlock lower yearbooks only for documented city/year/indicator/scope gaps."""
-    ancestors={'city':['province'],'county':['province','city']}.get(level,[])
+    if level not in ('province','city'):return set()
+    ancestors={'city':['province']}.get(level,[])
     documented={(key(c),c.get('level')) for c in checks if c.get('status') in ('missing','unavailable','scope_mismatch') and c.get('reason') and c.get('source_refs')}
     return {k for k in missing if all((k,a) in documented for a in ancestors)}
 
@@ -22,7 +23,9 @@ def plan_tables(tables,selected,reviewed_sources=(),fallback_checks=()):
         else:item['action']='version_or_scope_review'
         level=table.get('yearbook_level') or (table.get('authority_level') if table.get('source_class')=='yearbook' else None)
         item['collection_level']=level or 'unknown'
-        if level in ('city','county'):
+        if level in ('county','district','national'):
+            item['action']='exclude_outside_province_city_collection_levels'
+        elif level=='city':
             unlocked=fallback_keys(missing,level,fallback_checks)
             item['unlocked_gap_keys']=[list(k) for k in sorted(unlocked)]
             item['unlocked_gap_count']=len(unlocked)
@@ -33,8 +36,8 @@ def plan_tables(tables,selected,reviewed_sources=(),fallback_checks=()):
             item['publication_level_requires_review']=True
             if expected and item['action']!='reuse_reviewed_table':item['action']='inspect_publication_level_metadata_only'
         out.append(item)
-    levels={'national':0,'province':1,'city':2,'county':3,'unknown':0}
-    return sorted(out,key=lambda r:(r['action'].startswith('defer_'),levels.get(r['collection_level'],0),-r['expected_new_values'],-int(bool(r.get('energy_priority'))),-r.get('edition',0)))
+    levels={'province':1,'city':2,'unknown':0}
+    return sorted(out,key=lambda r:(r['action'].startswith(('defer_','exclude_')),levels.get(r['collection_level'],9),-r['expected_new_values'],-int(bool(r.get('energy_priority'))),-r.get('edition',0)))
 
 def export_ready(batch):
     pending=batch.get('pending_tables',[]);decision=batch.get('decision')

@@ -21,34 +21,13 @@
   ],
   "source_priorities": [
     {
-      "name": "国家统计局",
+      "name": "各省（市）统计年鉴",
       "match": {
-        "publisher_id": "nbs"
-      }
-    },
-    {
-      "name": "各省统计年鉴",
-      "match": {
-        "authority_level": "province",
         "source_class": "yearbook"
       }
     },
     {
-      "name": "市级统计年鉴",
-      "match": {
-        "authority_level": "city",
-        "source_class": "yearbook"
-      }
-    },
-    {
-      "name": "县级统计年鉴",
-      "match": {
-        "authority_level": "county",
-        "source_class": "yearbook"
-      }
-    },
-    {
-      "name": "发展公报",
+      "name": "各省（市）发展公报",
       "match": {
         "source_class": "communique"
       }
@@ -60,8 +39,8 @@
   ],
   "yearbook_collection_order": [
     "province",
-    "city",
-    "county"
+    "city"
   ],
-  "lower_yearbook_policy": "Only documented remaining city-year-indicator-scope gaps; preserve all rows in each source table"
+  "lower_yearbook_policy": "Only city-level research units; no subordinate county/district yearbook collection",
+  "city_url_catalog": "assets/city_yearbook_urls.json"
 }

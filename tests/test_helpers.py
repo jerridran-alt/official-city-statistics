@@ -143,11 +143,11 @@ class EvidenceTests(unittest.TestCase):
 
     def test_priority_beats_later_edition_and_conflicts_remain(self):
         # Isolated selector test; evidence validation is exercised independently above.
-        a = dict(self.records[0], id='nbs', edition=2025)
-        b = dict(self.records[0], id='province', edition=2026, value=200.3)
+        a = dict(self.records[0], id='yearbook', source_class='yearbook', edition=2025)
+        b = dict(self.records[0], id='communique', source_class='communique', edition=2026, value=200.3)
         report = {'results': [{'id': r['id'], 'machine_checks_passed': True, 'origin': {'capture_matched': True, 'authority': authority}} for r, authority in [(a, {'publisher_id': 'nbs', 'level': 'national'}), (b, {'publisher_id': 'province', 'level': 'province'})]]}
         reviews = [{'record_id': r['id'], 'source_sha256': r['evidence']['sha256'], 'decision': 'approve', 'reviewer': 'test', 'reason': 'selector fixture'} for r in (a, b)]
-        self.assertEqual(select([a, b], CONFIG, report, reviews)['selected'][0]['id'], 'nbs')
+        self.assertEqual(select([a, b], CONFIG, report, reviews)['selected'][0]['id'], 'yearbook')
         c = dict(a, id='conflict', value=999)
         report['results'].append(dict(report['results'][0], id=c['id']))
         reviews.append(dict(reviews[0], record_id=c['id']))
@@ -204,7 +204,7 @@ class BackendTests(unittest.TestCase):
         rules = CONFIG['source_priorities']
         cases = [('government_document', 'nbs', 'national'), ('yearbook', 'province', 'province'), ('yearbook', 'city', 'city'), ('yearbook', 'county', 'county'), ('communique', 'city', 'city'), ('government_document', 'city', 'city')]
         ranks = [priority({'source_class': c}, {'publisher_id': p, 'level': l}, rules) for c, p, l in cases]
-        self.assertEqual(ranks, [6, 5, 4, 3, 2, 1])
+        self.assertEqual(ranks, [1, 3, 3, 3, 2, 1])
 
     def test_bounded_catalog(self):
         def response(args):

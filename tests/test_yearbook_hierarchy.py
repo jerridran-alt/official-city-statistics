@@ -23,18 +23,18 @@ class YearbookHierarchyTests(unittest.TestCase):
   t={'yearbook_level':'city','expected_keys':[self.a,self.b]};r=plan_tables([t],[],fallback_checks=[self.check('province')])[0]
   self.assertEqual(r['unlocked_gap_count'],1);self.assertEqual(r['deferred_gap_count'],1);self.assertTrue(r['read_all_cities'])
   r=plan_tables([t],[self.a],fallback_checks=[self.check('province')])[0];self.assertEqual(r['unlocked_gap_count'],0)
- def test_county_requires_province_and_city_checks(self):
+ def test_county_is_not_a_collection_stage(self):
   t={'yearbook_level':'county','expected_keys':[self.a]}
-  self.assertEqual(plan_tables([t],[],fallback_checks=[self.check('province')])[0]['unlocked_gap_count'],0)
-  self.assertEqual(plan_tables([t],[],fallback_checks=[self.check('province'),self.check('city')])[0]['unlocked_gap_count'],1)
+  self.assertEqual(plan_tables([t],[],fallback_checks=[self.check('province')])[0].get('unlocked_gap_count',0),0)
+  self.assertEqual(plan_tables([t],[],fallback_checks=[self.check('province'),self.check('city')])[0]['action'],'exclude_outside_province_city_collection_levels')
  def test_unavailable_upper_level_is_recorded_and_pending_is_not_missing(self):
   t={'yearbook_level':'city','expected_keys':[self.a]}
   self.assertEqual(plan_tables([t],[],fallback_checks=[self.check('province','unavailable')])[0]['unlocked_gap_count'],1)
-  self.assertEqual(plan_tables([t],[],fallback_checks=[self.check('province','pending_review')])[0]['unlocked_gap_count'],0)
-  bare=self.check('province');bare['source_refs']=[];self.assertEqual(plan_tables([t],[],fallback_checks=[bare])[0]['unlocked_gap_count'],0)
- def test_source_priority_province_city_county_communique(self):
+  self.assertEqual(plan_tables([t],[],fallback_checks=[self.check('province','pending_review')])[0].get('unlocked_gap_count',0),0)
+  bare=self.check('province');bare['source_refs']=[];self.assertEqual(plan_tables([t],[],fallback_checks=[bare])[0].get('unlocked_gap_count',0),0)
+ def test_source_priority_is_yearbook_then_communique_then_other(self):
   config=json.loads((Path(__file__).resolve().parents[1]/'examples/project.json').read_text(encoding='utf8'))
-  ranks=[priority({'source_class':'yearbook'},{'publisher_id':'local','level':level},config['source_priorities']) for level in ['province','city','county']]
-  ranks.append(priority({'source_class':'communique'},{'publisher_id':'local','level':'province'},config['source_priorities']));self.assertEqual(ranks,sorted(ranks,reverse=True));self.assertEqual(len(set(ranks)),4)
+  ranks=[priority({'source_class':c},{'publisher_id':'local','level':'province'},config['source_priorities']) for c in ['yearbook','communique','government_document']]
+  self.assertEqual(ranks,[3,2,1]);self.assertEqual(priority({'source_class':'government_document'},{'publisher_id':'nbs','level':'national'},config['source_priorities']),1)
 
 if __name__=='__main__':unittest.main()
