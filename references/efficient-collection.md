@@ -6,6 +6,12 @@
 每表 `expected_keys` 为城市代码/年份/指标/地域范围；可标 `energy_priority`、版次和源SHA。
 输出预期新增数和新值密度。未知表覆盖仍进待检查队列，预期数不是已经取得的数值。
 先读高补缺表，不按预期缺失城市裁切整表；提取仍包含同表全部城市。
+年鉴调用先省级，再市级，再县级；仅同一级内部按预计新增数量排序，不让低级高新增表越过省级检查。
+表目录元数据须注明`yearbook_level=province/city/county`，缺级别先核对，不凭网址猜书籍级别。
+`--fallback-checks <上级缺项台账.json>`逐键记录code/research_id、year、indicator、geographic_scope、level、status、reason、source_refs。
+市级表需省级同键检查，县级表需省、市两级检查；status可为missing/unavailable/scope_mismatch，须有原因及源件或失败记录引用。裸“已检查”标志、待审值、无引用不能解锁下查。
+unavailable只允许临时下查，省级原路径仍留回查队列；scope_mismatch表示已读表不可用于目标键，不证明所有省级资料均无数。
+输出unlocked_gap_keys只决定为何调取下级表，不裁切表中其他城市；未解锁键和额外原行留缓存，待核查上级覆盖及正式筛选。
 同义指标先通过项目显式别名统一键，不用新名字重复计算补缺。
 缺项少但新版可能修订的表进入版本核对队列，不能为了新增率跳过最新版要求。
 

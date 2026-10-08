@@ -202,9 +202,9 @@ class BackendTests(unittest.TestCase):
 
     def test_configured_source_order(self):
         rules = CONFIG['source_priorities']
-        cases = [('government_document', 'nbs', 'national'), ('yearbook', 'province', 'province'), ('communique', 'city', 'city'), ('yearbook', 'city', 'city')]
+        cases = [('government_document', 'nbs', 'national'), ('yearbook', 'province', 'province'), ('yearbook', 'city', 'city'), ('yearbook', 'county', 'county'), ('communique', 'city', 'city'), ('government_document', 'city', 'city')]
         ranks = [priority({'source_class': c}, {'publisher_id': p, 'level': l}, rules) for c, p, l in cases]
-        self.assertEqual(ranks, [4, 3, 2, 1])
+        self.assertEqual(ranks, [6, 5, 4, 3, 2, 1])
 
     def test_bounded_catalog(self):
         def response(args):

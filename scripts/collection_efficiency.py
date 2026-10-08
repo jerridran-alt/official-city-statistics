@@ -4,7 +4,13 @@ from pathlib import Path
 
 def digest(value):return hashlib.sha256(json.dumps(value,ensure_ascii=False,sort_keys=True,separators=(',',':')).encode()).hexdigest()
 def key(r):return (r.get('code',r.get('research_id',r.get('city'))),r['year'],r['indicator'],r.get('geographic_scope','full_city'))
-def plan_tables(tables,selected,reviewed_sources=()):
+def fallback_keys(missing,level,checks):
+    """Unlock lower yearbooks only for documented city/year/indicator/scope gaps."""
+    ancestors={'city':['province'],'county':['province','city']}.get(level,[])
+    documented={(key(c),c.get('level')) for c in checks if c.get('status') in ('missing','unavailable','scope_mismatch') and c.get('reason') and c.get('source_refs')}
+    return {k for k in missing if all((k,a) in documented for a in ancestors)}
+
+def plan_tables(tables,selected,reviewed_sources=(),fallback_checks=()):
     present={key(r) for r in selected};done=set(reviewed_sources);out=[]
     for table in tables:
         # Table metadata only estimates yield, never proves actual values exist.
@@ -14,8 +20,21 @@ def plan_tables(tables,selected,reviewed_sources=()):
         elif missing:item['action']='acquire_or_reuse_table'
         elif table.get('source_sha256') in done and not table.get('newer_eligible_edition'):item['action']='reuse_reviewed_table'
         else:item['action']='version_or_scope_review'
+        level=table.get('yearbook_level') or (table.get('authority_level') if table.get('source_class')=='yearbook' else None)
+        item['collection_level']=level or 'unknown'
+        if level in ('city','county'):
+            unlocked=fallback_keys(missing,level,fallback_checks)
+            item['unlocked_gap_keys']=[list(k) for k in sorted(unlocked)]
+            item['unlocked_gap_count']=len(unlocked)
+            item['deferred_gap_count']=len(missing-unlocked)
+            if not unlocked:
+                item['action']='defer_lower_yearbook_until_documented_upper_gaps'
+        elif level is None:
+            item['publication_level_requires_review']=True
+            if expected and item['action']!='reuse_reviewed_table':item['action']='inspect_publication_level_metadata_only'
         out.append(item)
-    return sorted(out,key=lambda r:(r['expected_new_values'],bool(r.get('energy_priority')),r.get('edition',0)),reverse=True)
+    levels={'national':0,'province':1,'city':2,'county':3,'unknown':0}
+    return sorted(out,key=lambda r:(r['action'].startswith('defer_'),levels.get(r['collection_level'],0),-r['expected_new_values'],-int(bool(r.get('energy_priority'))),-r.get('edition',0)))
 
 def export_ready(batch):
     pending=batch.get('pending_tables',[]);decision=batch.get('decision')
@@ -26,7 +45,8 @@ def export_ready(batch):
     return {'export_key':identity,'ready':True,'complete':decision=='province_complete','pending_tables':pending}
 
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--tables',required=True);p.add_argument('--selected',required=True);p.add_argument('--output',required=True);a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--tables',required=True);p.add_argument('--selected',required=True);p.add_argument('--output',required=True);p.add_argument('--fallback-checks',help='Documented upper-level gaps, not a bare completion flag');a=p.parse_args()
     tables=json.loads(Path(a.tables).read_text(encoding='utf8'));selected=json.loads(Path(a.selected).read_text(encoding='utf8'));selected=selected.get('selected',[]) if isinstance(selected,dict) else selected
-    Path(a.output).write_text(json.dumps(plan_tables(tables,selected),ensure_ascii=False,indent=2),encoding='utf8')
+    checks=json.loads(Path(a.fallback_checks).read_text(encoding='utf8')) if a.fallback_checks else []
+    Path(a.output).write_text(json.dumps(plan_tables(tables,selected,fallback_checks=checks),ensure_ascii=False,indent=2),encoding='utf8')
 if __name__=='__main__':main()
