@@ -1,5 +1,7 @@
 # 补缺效率与访问诊断
 
+查源时间预算、PDF正文抽样、JSON任务参数及分阶段计时见[执行预算](execution-budget.md)。目录默认120秒为停止发起请求的软预算；硬限额使用`execution_control.py`。超时仍留队列，不等于完成。
+
 ## 先排表，再取数
 
 `collection_efficiency.py --tables <目录元数据.json> --selected <已选原数.json> --output <队列.json>`。

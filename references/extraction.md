@@ -1,5 +1,7 @@
 # 采集与提取
 
+长PDF先按[执行预算](execution-budget.md)用`pdf_probe.py`抽查正文，再从目录定位目标原页；封面文字不能证明正文有文字层。`run_pipeline.py`对超过5页且无页映射的PDF显式停止，避免盲OCR前5页。
+
 ## 来源采集
 
 ```text
