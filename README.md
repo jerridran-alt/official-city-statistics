@@ -16,6 +16,8 @@ A configurable Codex skill for collecting original city statistics from official
 
 ## 补缺效率与网络诊断
 
+**国内统计网站采集不推荐VPN全局模式，优先规则分流：官方域名直连，模型/API保留VPN。** 不自动断开VPN，不把脚本失败等同于官网不可访问；浏览器已成功显示的目录/PDF应单独记成功并复用。
+
 新增[进度下载、续传及VPN单请求分流](references/progress-and-vpn.md)：保持全局VPN以维持模型连接，仅统计请求可选direct/授权proxy。有进度下载继续；无进度或用户工作配额停止时保留部分文件，用ETag/Last-Modified＋Range校验续传。客户端全局隧道不一定能被HTTP-direct旁路，目前甘肃真实直连探测仍412，不能声称已经解决所有境外IP限制。新回归覆盖续传/版本/完整性，使用[同输入效率验证](references/efficiency-validation.md)区分识别性能与新增率、网络成本。
 
 查源预算、正文抽查PDF、JSON参数任务及分阶段计时已接入，见[执行预算](references/execution-budget.md)。长PDF未指定目标页时显式暂停；超时保留任务，未计入工具阶段的等待单列，不虚报Token或全流程提速。新疆138页官方PDF存档回放：5页抽样0.34秒识别混合文字/扫描样本，仅验证探测环节。
