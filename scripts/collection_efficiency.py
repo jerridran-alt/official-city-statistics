@@ -17,9 +17,13 @@ def plan_tables(tables,selected,reviewed_sources=(),fallback_checks=()):
         # Table metadata only estimates yield, never proves actual values exist.
         expected={key(r) for r in table.get('expected_keys',[])};missing=expected-present
         item={**table,'expected_new_values':len(missing),'expected_keys_count':len(expected),'estimated_new_density':len(missing)/len(expected) if expected else None,'read_all_cities':True}
+        cost=table.get('estimated_seconds')
+        if cost is not None and (type(cost) not in (int,float) or cost<=0):raise ValueError('estimated_seconds must be a positive measured/planned table cost')
+        item['expected_new_values_per_second']=len(missing)/cost if cost else None
+        item['version_review_due']=bool(table.get('newer_eligible_edition') or table.get('scope_changed') or table.get('same_source_correction_due'))
         if not expected:item['action']='inspect_unknown_coverage'
         elif missing:item['action']='acquire_or_reuse_table'
-        elif table.get('source_sha256') in done and not table.get('newer_eligible_edition'):item['action']='reuse_reviewed_table'
+        elif table.get('source_sha256') in done and not item['version_review_due']:item['action']='reuse_reviewed_table'
         else:item['action']='version_or_scope_review'
         level=table.get('yearbook_level') or (table.get('authority_level') if table.get('source_class')=='yearbook' else None)
         item['collection_level']=level or 'unknown'
@@ -37,7 +41,7 @@ def plan_tables(tables,selected,reviewed_sources=(),fallback_checks=()):
             if expected and item['action']!='reuse_reviewed_table':item['action']='inspect_publication_level_metadata_only'
         out.append(item)
     levels={'province':1,'city':2,'unknown':0}
-    return sorted(out,key=lambda r:(r['action'].startswith(('defer_','exclude_')),levels.get(r['collection_level'],9),-r['expected_new_values'],-int(bool(r.get('energy_priority'))),-r.get('edition',0)))
+    return sorted(out,key=lambda r:(r['action'].startswith(('defer_','exclude_')),levels.get(r['collection_level'],9),-int(r['version_review_due']),-(r['expected_new_values_per_second'] or 0),-r['expected_new_values'],-(r['estimated_new_density'] or 0),-int(bool(r.get('energy_priority'))),-r.get('edition',0)))
 
 def export_ready(batch):
     pending=batch.get('pending_tables',[]);decision=batch.get('decision')

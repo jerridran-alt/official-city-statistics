@@ -21,7 +21,7 @@ def discover(profile,registry,output,network_state=None,follow_years=0,timeout=1
         if url in seen:continue
         seen.add(url)
         try:
-            r=fetch(SimpleNamespace(url=url,registry=registry,output=output,network_state=network_state,engine='http',html=None,refresh=False,encoding=None,retries=0,timeout=timeout,max_bytes=20000000,wait_selector=None))
+            r=fetch(SimpleNamespace(url=url,registry=registry,output=output,network_state=network_state,engine='http',html=None,refresh=False,encoding=None,retries=0,timeout=timeout,max_bytes=20000000,wait_selector=None,network_route=profile.get('network_route','configured'),proxy_env=profile.get('proxy_env'),max_seconds=max(.1,deadline-time.monotonic())))
             results.append({'url':url,'final_url':r['final_url'],'status':'ok','sha256':r['sha256'],'cache_hit':r.get('cache_hit',False),'encoding':r.get('encoding')})
             title=r.get('document_title','');edition=re.search(r'(?:19|20)\d{2}',title);book_context='年鉴' in title or 'Yearbook' in title
             if profile.get('entry_kind')=='direct_yearbook' and url in seeds and edition and ('年鉴' in title or 'Yearbook' in title):
@@ -42,7 +42,7 @@ def discover(profile,registry,output,network_state=None,follow_years=0,timeout=1
     for entry in entries[:follow_years]:
         if time.monotonic()>=deadline:budget_exhausted=True;break
         try:
-            r=fetch(SimpleNamespace(url=entry['url'],registry=registry,output=output,network_state=network_state,engine='http',html=None,refresh=False,encoding=None,retries=0,timeout=timeout,max_bytes=20000000,wait_selector=None))
+            r=fetch(SimpleNamespace(url=entry['url'],registry=registry,output=output,network_state=network_state,engine='http',html=None,refresh=False,encoding=None,retries=0,timeout=timeout,max_bytes=20000000,wait_selector=None,network_route=profile.get('network_route','configured'),proxy_env=profile.get('proxy_env'),max_seconds=max(.1,deadline-time.monotonic())))
             verified.append({**entry,'status':'ok','final_url':r['final_url'],'source_sha256':r['sha256'],'frames':[a['url'] for a in r['links'] if a.get('is_catalog_frame')]})
         except Exception as e:verified.append({**entry,'status':'failed','failure':classify(e)})
     report={'province':profile['province'],'catalog_pages':results,'yearbook_entries':entries,'pending_year_links':pending,'visited_yearbooks':verified,'unvisited_catalog_urls':queue,'unvisited_yearbook_entries':entries[len(verified):],'discovery_budget_seconds':discovery_seconds,'budget_exhausted':budget_exhausted,'data_complete':False,'scope':'Configured official catalog links only; discovered entries are not all claimed reachable','checked_unix':time.time()}

@@ -165,16 +165,13 @@ def _fetch(args):
             raise ValueError('Rendered HTML exceeds max-bytes')
         ctype, charset, mode = 'text/html; charset=utf-8', 'utf-8', 'browser_network'
     else:
-        opener = urllib.request.build_opener(CheckedRedirect(hosts))
+        from progress_download import transfer
         for attempt in range(args.retries + 1):
             try:
-                req = urllib.request.Request(args.url, headers={'User-Agent': 'OfficialStatisticsResearch/1.0'})
-                with opener.open(req, timeout=args.timeout) as response:
-                    final_url = response.url
-                    check_url(final_url, hosts)
-                    body = response.read(args.max_bytes + 1)
-                    ctype = response.headers.get('Content-Type', '')
-                    charset = html_encoding(body,response.headers.get_content_charset(),args.encoding) if 'html' in ctype.lower() else args.encoding or 'utf-8'
+                body,final_url,response_headers,download_meta=transfer(args.url,args,hosts,output,CheckedRedirect)
+                check_url(final_url, hosts)
+                ctype = response_headers.get('Content-Type', '')
+                charset = html_encoding(body,response_headers.get_content_charset(),args.encoding) if 'html' in ctype.lower() else args.encoding or 'utf-8'
                 if len(body) > args.max_bytes:
                     raise ValueError('Response exceeds max-bytes; increase limit deliberately')
                 break
@@ -196,6 +193,11 @@ def _fetch(args):
     # Offline inspections must not replace a previously retrieved network manifest.
     target = output / (key + '.offline.json') if args.html else manifest
     write_json(target, record)
+    if engine=='http' and not args.html:
+        from progress_download import committed
+        record.update({k:v for k,v in download_meta.items() if not k.endswith('_path')})
+        record['outbound_region']='unknown; task route does not prove IP geolocation'
+        write_json(target,record);committed(download_meta)
     return record
 
 
@@ -208,7 +210,7 @@ def fetch(args):
     from network_health import host_slot,finish,failure
     from types import SimpleNamespace
     parsed=urlparse(args.url);host=parsed.hostname
-    origin=f'{parsed.scheme}://{host}:{parsed.port or (443 if parsed.scheme=="https" else 80)}'
+    origin=f'{parsed.scheme}://{host}:{parsed.port or (443 if parsed.scheme=="https" else 80)}|route={getattr(args,"network_route","configured")}'
     # Validate registry before touching host state or the network.
     registry=json.loads(Path(args.registry).read_text(encoding='utf-8-sig'))
     hosts={r['host'].lower():r for r in registry['hosts'] if r.get('verified') is True and r.get('publisher') and r.get('evidence_url')};check_url(args.url,hosts)
@@ -220,7 +222,7 @@ def fetch(args):
         except Exception as exc:
             finish(state,statefile,exc)
             output.mkdir(parents=True,exist_ok=True)
-            write_json(output/(key+'.failure.json'),{'url':args.url,'failure':failure(exc),'error':str(exc),'network_route':'existing configured route; unchanged','outbound_region':'unknown'})
+            write_json(output/(key+'.failure.json'),{'url':args.url,'failure':failure(exc),'error':str(exc),'network_route':getattr(args,'network_route','configured'),'outbound_region':'unknown','partial_retained':any(output.glob('*.part'))})
             raise
         finish(state,statefile);return result
 
@@ -236,6 +238,11 @@ def main():
     p.add_argument('--refresh', action='store_true')
     p.add_argument('--network-state', help='Shared host health directory for all batches in a project')
     p.add_argument('--timeout', type=float, default=25)
+    p.add_argument('--idle-timeout', type=float, help='No-progress socket wait; active downloads continue')
+    p.add_argument('--max-seconds', type=float, help='Optional work quota, not a default whole-download cutoff; partial bytes retained')
+    p.add_argument('--no-resume',dest='resume',action='store_false',default=True)
+    p.add_argument('--network-route',choices=('configured','direct','proxy'),default='configured',help='Task-only HTTP route; never changes VPN/OS/global proxy')
+    p.add_argument('--proxy-env',help='Environment variable holding an authorized HTTP(S) proxy; no endpoint or credentials in public config')
     p.add_argument('--retries', type=int, choices=(0, 1), default=0)
     p.add_argument('--max-bytes', type=int, default=100 * 1024 * 1024)
     args = p.parse_args()

@@ -6,13 +6,28 @@ import subprocess
 import time
 from pathlib import Path
 
-PHASES = ('discovery', 'network', 'parse', 'ocr', 'review', 'selection', 'export', 'environment')
+PHASES = ('discovery', 'network', 'parse', 'ocr', 'review', 'mapping', 'visual_review', 'machine_audit', 'selection', 'export', 'environment')
 
 
 class PhaseLedger:
     def __init__(self, path):
         self.path = Path(path)
         self.data = json.loads(self.path.read_text(encoding='utf-8')) if self.path.exists() else {'started_unix': time.time(), 'events': []}
+        if not self.path.exists():
+            self.path.parent.mkdir(parents=True,exist_ok=True)
+            self.path.write_text(json.dumps(self.data,ensure_ascii=False,indent=2),encoding='utf8')
+
+    def start_phase(self,phase,label):
+        if phase not in PHASES or not label:raise ValueError('Valid phase and label required')
+        active=self.data.setdefault('active_phases',{})
+        if label in active:raise ValueError('Phase label already active')
+        active[label]={'phase':phase,'started_unix':time.time()}
+        self.path.write_text(json.dumps(self.data,ensure_ascii=False,indent=2),encoding='utf8')
+
+    def finish_phase(self,label,status='ok'):
+        active=self.data.setdefault('active_phases',{})
+        if label not in active:raise ValueError('Phase label not active')
+        entry=active.pop(label);self.record(entry['phase'],entry['started_unix'],status,{'label':label})
 
     def record(self, phase, started, status, detail=None):
         if phase not in PHASES:
@@ -35,6 +50,7 @@ class PhaseLedger:
         wall = now - self.data['started_unix']
         accounted = sum(b - a for a, b in merged)
         return {'wall_seconds': wall, 'phase_seconds': totals, 'unattributed_seconds': max(0, wall - accounted),
+                'open_phases':self.data.get('active_phases',{}),
                 'unattributed_note': 'Includes agent/tool gaps and user waiting; not measured model inference time.',
                 'seconds_per_100_new_values': wall * 100 / new_values if new_values and new_values > 0 else None,
                 'tokens': None, 'energy': None}
@@ -68,9 +84,12 @@ def main():
     p.add_argument('--ledger', required=True)
     p.add_argument('--job', help='JSON with argv list, phase, timeout_seconds, optional cwd')
     p.add_argument('--new-values', type=int)
+    p.add_argument('--start-phase',choices=PHASES);p.add_argument('--finish-phase',action='store_true');p.add_argument('--label')
     p.add_argument('--output', required=True)
     a = p.parse_args()
     ledger = PhaseLedger(a.ledger)
+    if a.start_phase:ledger.start_phase(a.start_phase,a.label)
+    if a.finish_phase:ledger.finish_phase(a.label)
     result = run_job(json.loads(Path(a.job).read_text(encoding='utf-8-sig')), ledger) if a.job else ledger.summary(a.new_values)
     Path(a.output).write_text(json.dumps(result, ensure_ascii=False, indent=2), encoding='utf-8')
     print(json.dumps({k: v for k, v in result.items() if k not in ('stdout', 'stderr')}, ensure_ascii=False))

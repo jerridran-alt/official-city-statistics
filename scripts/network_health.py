@@ -12,7 +12,7 @@ def failure(exc):
     cause=getattr(exc,'reason',exc)
     if isinstance(exc,urllib.error.HTTPError):
         status=exc.code
-        return {'code':f'HTTP_{status}','host_failure':status in (403,408,429,500,502,503,504),'immediate':status in (403,429),'retryable':status in (408,429,500,502,503,504)}
+        return {'code':f'HTTP_{status}','host_failure':status in (403,408,412,429,500,502,503,504),'immediate':status in (403,412,429),'retryable':status in (408,429,500,502,503,504)}
     if isinstance(cause,socket.gaierror):code='DNS_ERROR'
     elif isinstance(cause,ssl.SSLCertVerificationError):code='TLS_CERTIFICATE_ERROR'
     elif 'handshake' in str(cause).lower():code='TLS_HANDSHAKE_TIMEOUT'

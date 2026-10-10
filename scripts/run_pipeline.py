@@ -22,7 +22,8 @@ def run(url,config,registry_file,output,media_limit=2,ocr_engine='auto',parent_u
             result=fn(*args,**kwargs);status='ok';return result
         finally:ledger.record(phase,begin,status)
     registry=json.loads(Path(registry_file).read_text(encoding='utf-8-sig'))
-    args=SimpleNamespace(url=url,registry=str(Path(registry_file).resolve()),output=str(capture_dir),html=None,refresh=False,encoding=None,retries=0,timeout=25,max_bytes=100*1024*1024,engine='http')
+    net=config.get('network',{})
+    args=SimpleNamespace(url=url,registry=str(Path(registry_file).resolve()),output=str(capture_dir),html=None,refresh=False,encoding=None,retries=0,timeout=net.get('idle_timeout',25),max_bytes=100*1024*1024,engine='http',network_route=net.get('route','configured'),proxy_env=net.get('proxy_env'),max_seconds=net.get('work_budget_seconds'),resume=True)
     cap=timed('network',fetch,args);manifest=capture_dir/(hashlib.sha256((url+'\0http').encode()).hexdigest()[:24]+'.json');source=capture_dir/cap['file']
     with source.open('rb') as f:prefix=f.read(8)
     if prefix.startswith(b'%PDF') or cap['content_type'].lower().startswith('image/'):
@@ -49,7 +50,7 @@ def run(url,config,registry_file,output,media_limit=2,ocr_engine='auto',parent_u
             extracted=timed('parse',extract_ocr,source,artifact,config,output,manifest,registry,parent_manifest)
         records=extracted['records']
         if not records:raise SourceFailure('OCR_LAYOUT_UNPARSED','PDF/图片已OCR但未得到可确定原数；需视觉或另一版式后端，不得喂空数据')
-        save(output/'candidates.json',records);save(output/'candidates.json.report.json',{'status':'partial_pending' if extracted['pending'] else 'extracted_candidates','records':len(records),'data_complete':False});report=timed('review',audit,records,config,output,registry);save(output/'audit.json',report)
+        save(output/'candidates.json',records);save(output/'candidates.json.report.json',{'status':'partial_pending' if extracted['pending'] else 'extracted_candidates','records':len(records),'data_complete':False});report=timed('machine_audit',audit,records,config,output,registry);save(output/'audit.json',report)
         result={'status':'partial_pending' if extracted['pending'] else 'candidates_require_review','records':len(records),'machine_checks_passed':report['machine_checks_passed'],'unreviewed':len(records),'image_sources_queued':layout['pages_queued'],'failed_sources':[],'seconds':round(time.monotonic()-started,3),'data_complete':False,'backend':'mapped matrix OCR' if matrix_plan else 'PDF/image OCR','pending':extracted['pending'],'validation_coverage':coverage()};result['timing']=ledger.summary();save(output/'pipeline_report.json',result);return result
     if matrix_plan:raise SourceFailure('MATRIX_DIRECT_ATTACHMENT_REQUIRED','矩阵计划需要直接官方PDF/图片URL；当前是HTML，不静默改走单城正文路径')
     article=timed('parse',extract_article,source,config,output,manifest);records=article['records'];media=[];failures=[]
@@ -64,7 +65,7 @@ def run(url,config,registry_file,output,media_limit=2,ocr_engine='auto',parent_u
             if not extracted['records']:failures.append({'url':image['url'],'failure':{'code':'OCR_LAYOUT_UNPARSED','category':'parse','retryable':False,'reason':'OCR 已产生词，但没有可确定的指标行；需视觉/其他布局后端'}})
         except Exception as exc:failures.append({'url':image['url'],'failure':classify(exc)})
     if not records:raise SourceFailure('NO_CANDIDATES','所有路径均未取得指标记录，来源未解析，非数据齐全')
-    save(output/'candidates.json',records);save(output/'candidates.json.report.json',{'status':'extracted_candidates','records':len(records),'data_complete':False});report=timed('review',audit,records,config,output,registry);save(output/'audit.json',report)
+    save(output/'candidates.json',records);save(output/'candidates.json.report.json',{'status':'extracted_candidates','records':len(records),'data_complete':False});report=timed('machine_audit',audit,records,config,output,registry);save(output/'audit.json',report)
     result={'status':'candidates_require_review','records':len(records),'machine_checks_passed':report['machine_checks_passed'],'unreviewed':len(records),'image_results':media,'failed_sources':failures,'image_sources_queued':max(0,len(relevant)-media_limit),'unsupported_rules':article['unsupported_rules'],'missing_indicators':[n for n in config['keep_indicators'] if n not in {r['indicator'] for r in records}],'excluded_mentions':article['excluded_mentions'],'seconds':round(time.monotonic()-started,3),'data_complete':False,'note':'候选生成不是统计真实性认证。先完成原文/原图和口径审核，再运行 select_panel.py。'}
     result['validation_coverage']=coverage()
     result['timing']=ledger.summary();save(output/'pipeline_report.json',result);return result

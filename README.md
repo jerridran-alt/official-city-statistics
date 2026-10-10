@@ -16,9 +16,11 @@ A configurable Codex skill for collecting original city statistics from official
 
 ## 补缺效率与网络诊断
 
+新增[进度下载、续传及VPN单请求分流](references/progress-and-vpn.md)：保持全局VPN以维持模型连接，仅统计请求可选direct/授权proxy。有进度下载继续；无进度或用户工作配额停止时保留部分文件，用ETag/Last-Modified＋Range校验续传。客户端全局隧道不一定能被HTTP-direct旁路，目前甘肃真实直连探测仍412，不能声称已经解决所有境外IP限制。新回归覆盖续传/版本/完整性，使用[同输入效率验证](references/efficiency-validation.md)区分识别性能与新增率、网络成本。
+
 查源预算、正文抽查PDF、JSON参数任务及分阶段计时已接入，见[执行预算](references/execution-budget.md)。长PDF未指定目标页时显式暂停；超时保留任务，未计入工具阶段的等待单列，不虚报Token或全流程提速。新疆138页官方PDF存档回放：5页抽样0.34秒识别混合文字/扫描样本，仅验证探测环节。
 
-新增目录级补缺排序、域名失败暂停、严格绑定原件/映射/审核的核验缓存，以及省级批次导出检查。详见[使用方法与边界](references/efficient-collection.md)。访问超时不完全等于境外IP限制：诊断记录DNS、当前代理配置及HTTP/TLS结果，出口地区未取得证据时保留未知。不更改代理、不关闭证书校验；首次和变化来源仍需核验，最新版修订不会因新增率低被跳过。
+新增目录级补缺排序、域名和请求通道失败暂停、严格绑定原件/映射/审核的核验缓存，以及省级批次导出检查。详见[使用方法与边界](references/efficient-collection.md)。出口地区未取得证据时保留未知；用户已确认地域限制时记录其依据。不更改全局代理/系统路由、不关闭证书校验；首次和变化来源仍需核验，最新版修订不会因新增率低被跳过。
 
 ## 31省级入口与真实目录链接
 

@@ -10,7 +10,7 @@ from stats_core import save
 from failure_types import classify
 
 
-def collect(seed, registry, output, depth=1, limit=10, engine='http', network_state=None):
+def collect(seed, registry, output, depth=1, limit=10, engine='http', network_state=None,network_route='configured',proxy_env=None,idle_timeout=25):
     hosts = {r['host'] for r in json.loads(Path(registry).read_text(encoding='utf-8-sig'))['hosts'] if r.get('verified') is True}
     queue, seen, results = deque([(seed, 0)]), set(), []
     while queue and len(results) < limit:
@@ -19,7 +19,7 @@ def collect(seed, registry, output, depth=1, limit=10, engine='http', network_st
             continue
         seen.add(url)
         try:
-            args = SimpleNamespace(url=url, registry=registry, output=output, html=None, refresh=False, encoding=None, retries=0, timeout=25, max_bytes=100 * 1024 * 1024, engine=engine, wait_selector=None,network_state=network_state)
+            args = SimpleNamespace(url=url, registry=registry, output=output, html=None, refresh=False, encoding=None, retries=0, timeout=idle_timeout, max_bytes=100 * 1024 * 1024, engine=engine, wait_selector=None,network_state=network_state,network_route=network_route,proxy_env=proxy_env)
             # Attachments are retrieved over HTTP rather than rendered as browser pages.
             if urlparse(url).path.lower().endswith(('.pdf', '.xls', '.xlsx', '.zip')):
                 args.engine = 'http'
@@ -42,10 +42,11 @@ def main():
     p.add_argument('--limit', type=int, default=10)
     p.add_argument('--engine', choices=('http', 'browser'), default='http')
     p.add_argument('--network-state')
+    p.add_argument('--network-route',choices=('configured','direct','proxy'),default='configured');p.add_argument('--proxy-env');p.add_argument('--idle-timeout',type=float,default=25)
     a = p.parse_args()
     if not 1 <= a.limit <= 100:
         p.error('limit must be between 1 and 100')
-    result = collect(a.url, a.registry, a.output, a.depth, a.limit, a.engine, a.network_state)
+    result = collect(a.url, a.registry, a.output, a.depth, a.limit, a.engine, a.network_state,a.network_route,a.proxy_env,a.idle_timeout)
     save(Path(a.output) / 'collection_report.json', result)
     print(json.dumps({'sources': len(result['sources']), 'failed': sum(r['status'] == 'failed' for r in result['sources']), 'queued_not_visited': result['queued_not_visited']}))
     return 1 if any(r['status'] == 'failed' for r in result['sources']) else 0
