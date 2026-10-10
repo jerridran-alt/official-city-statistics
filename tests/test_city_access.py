@@ -6,7 +6,7 @@ from city_access import lookup,plan_city
 class CityAccessTests(unittest.TestCase):
  def test_supplied_urls_and_empty_entries_are_preserved(self):
   cat=json.loads((Path(__file__).resolve().parents[1]/'assets/city_yearbook_urls.json').read_text(encoding='utf8'))
-  self.assertEqual(len(cat['entries']),369);self.assertEqual(sum(bool(e['yearbook_url']) for e in cat['entries']),246);self.assertEqual(sum(not e['yearbook_url'] for e in cat['entries']),123)
+  self.assertEqual(len(cat['entries']),369);self.assertEqual(sum(bool(e['yearbook_url']) for e in cat['entries']),317);self.assertEqual(sum(not e['yearbook_url'] for e in cat['entries']),52)
   self.assertEqual(lookup('澄迈县')['retrieval_level'],'city')
   self.assertEqual(lookup('梅州市')['yearbook_url'],'https://www.meizhou.gov.cn/zwgk/zfjg/stjj/mindex.html');self.assertIsNone(lookup('吕梁市')['yearbook_url'])
  def test_municipalities_reuse_provincial_layer(self):
